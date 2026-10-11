@@ -1,0 +1,164 @@
+# Remote sensor tile with optional online background image.
+# Displays a live value from a Home Assistant sensor entity.
+# Read-only: no action scripts, no detail page.
+#
+# vars:
+#   uid:                   unique identifier
+#   entity_id:             HA sensor entity, e.g. "sensor.outdoor_temperature"
+#   attribute:             HA attribute to display instead of state (optional, default: state)
+#   row:                   grid row
+#   column:                grid column
+#   text:                  sensor name shown on tile   (optional – label hidden if omitted)
+#   icon:                  icon glyph                  (optional – icon hidden if omitted)
+#   bg_opa:                background opacity. 0%-100% or TRANSP / COVER (optional, default: COVER)
+#   unit:                  unit string appended to value, e.g. "°C" (optional, default "")
+#   precision:             decimal places                           (optional, default 1)
+#   row_span:              (default: 1)
+#   column_span:           (default: 1)
+#   page_id:               parent page (default: main_page)
+#   label_font:            font for the label
+#   sensor_font:           font for the sensor value
+#
+#   icon_alignment:        LVGL align of the icon  (default: top_left)
+#   label_alignment:       LVGL align of the label (default: bottom_left)
+#   value_alignment:       LVGL align of the value (default: top_right)
+#
+#   image_url:             URL of a PNG/JPEG background image (optional – no image if omitted)
+#   image_width:           image is scaled to fit inside this width  (default: 128)
+#   image_height:          image is scaled to fit inside this height (default: 128)
+#                          (aspect ratio is preserved)
+#   image_format:          AUTO | PNG | JPEG | BMP | QOI   (default: AUTO, needs a correct
+#                          Content-Type from the server – set explicitly if decoding fails)
+#   image_alignment:       LVGL align of the image (default: center)
+#   image_opa:             opacity of the image, e.g. 60% to keep text readable (default: COVER)
+#   image_update_interval: re-download interval, e.g. 15min (default: never = load once)
+#
+# Notes:
+#   - Icon/label are always created but hidden when not passed (ESPHome packages
+#     cannot omit widgets conditionally).
+#   - The online_image is always declared (it requires a URL). Without image_url it
+#     gets a dummy URL and is never downloaded.
+#   - Requires http_request (declared below; settings in your main config win).
+
+globals:
+- id: ${uid}_current_value
+  type: float
+  initial_value: '0.0'
+- id: ${uid}_img_state          # 0 = pending, 1 = downloading, 2 = loaded
+  type: uint8_t
+  initial_value: '0'
+
+http_request:
+
+image:
+- platform: online_image
+  id: ${uid}_bg_image
+  url: '${image_url | default("http://localhost/no_image.png")}'
+  format: ${image_format | default("AUTO")}
+  type: RGB565
+  transparency: alpha_channel
+  resize: ${image_width | default(128)}x${image_height | default(128)}
+  update_interval: ${image_update_interval | default("never")}
+  on_download_finished:
+  - lambda: id(${uid}_img_state) = 2;
+  - lvgl.image.update:
+      id: img_${uid}
+      src: ${uid}_bg_image
+  - lvgl.widget.show: img_${uid}
+  on_error:
+  - lambda: id(${uid}_img_state) = 0;   # retry on next interval tick
+
+# ── Initial download once the network is up (works with WiFi and Ethernet) ──
+interval:
+- interval: 12s
+  then:
+  - if:
+      condition:
+        lambda: |-
+          return ${ 'true' if (image_url | default('')) != '' else 'false' } &&
+                 id(${uid}_img_state) == 0 &&
+                 network::is_connected();
+      then:
+      - lambda: id(${uid}_img_state) = 1;
+      - component.update: ${uid}_bg_image
+
+lvgl:
+  pages:
+  - id: !extend ${page_id | default("main_page")}
+    widgets:
+    - container:
+        id: ${uid}_tile
+        grid_cell_row_pos: ${row}
+        grid_cell_column_pos: ${column}
+        grid_cell_row_span: ${row_span | default(1)}
+        grid_cell_column_span: ${column_span | default(1)}
+        grid_cell_x_align: stretch
+        grid_cell_y_align: stretch
+        widgets:
+        - button:
+            id: button_${uid}
+            bg_opa: ${bg_opa | default("COVER")}
+            clickable: false
+            clip_corner: true            # clip image to the rounded tile corners
+            widgets:
+            # background image – first child, so it is drawn behind the labels
+            - image:
+                id: img_${uid}
+                src: ${uid}_bg_image
+                align: ${image_alignment | default("center")}
+                opa: ${image_opa | default("COVER")}
+                hidden: true             # shown after successful download
+                y: ${image_y | default(0)}
+                x: ${image_x | default(0)}
+            - label:
+                id: icon_${uid}
+                hidden: "${ 'false' if (icon | default('')) != '' else 'true' }"
+                align: ${icon_alignment | default("top_left")}
+                text_font: $icon_font
+                text_color: $icon_off_color
+                text: ${icon | default('')}
+                y: ${icon_y | default(0)}
+                x: ${icon_x | default(0)}
+            - label:
+                id: label_${uid}
+                hidden: "${ 'false' if (text | default('')) != '' else 'true' }"
+                align: ${label_alignment | default("bottom_left")}
+                long_mode: wrap
+                width: 70%
+                text_color: $label_off_color
+                text_font: ${label_font | default(text_font)}
+                text: ${text | default('')}
+                y: ${label_y | default(0)}
+                x: ${label_x | default(0)}
+            - label:
+                id: value_${uid}
+                align: ${value_alignment | default("top_right")}
+                text_font: ${sensor_font | default(text_font)}
+                text_color: $label_on_color
+                text: "--"
+                y: ${value_y | default(0)}
+                x: ${value_x | default(0)}
+
+# ── Subscribe to the HA sensor state ─────────────────────────────────────────
+sensor:
+- platform: homeassistant
+  id: ${uid}_ha_value
+  entity_id: ${entity_id}
+  attribute: ${attribute | default("")}
+  internal: true
+  on_value:
+  - lambda: id(${uid}_current_value) = x;
+  - script.execute: ${uid}_sync_state
+
+script:
+- id: ${uid}_sync_state
+  then:
+  - lvgl.label.update:
+      id: value_${uid}
+      text: !lambda |-
+        char buf[32];
+        snprintf(buf, sizeof(buf), "%.*f", ${precision | default(1)}, id(${uid}_current_value));
+        std::string s(buf);
+        std::string unit = "${unit | default("")}";
+        if (!unit.empty()) s += " " + unit;
+        return s;

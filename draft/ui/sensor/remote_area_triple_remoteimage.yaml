@@ -1,0 +1,179 @@
+# Remote sensor tile — displays a live value from a Home Assistant sensor entity.
+# Read-only: no action scripts, no detail page.
+#
+# vars:
+#   uid:          unique identifier
+#   entity_id:    HA sensor entity, e.g. "sensor.outdoor_sensor1val"
+#   attribute:    HA attribute to display instead of state (optional, default: state)
+#   row:          grid row
+#   column:       grid column
+#   text:         sensor name shown on tile
+#   icon:         icon glyph
+#   bg_opa:       background opacity. 0%-100% or text TRANSP or COVER, for fully opaque (optional, default: COVER)
+#   unit:         unit string appended to value, e.g. "°C"  (optional, default "")
+#   precision:    decimal places                             (optional, default 1)
+#   row_span:     (default: 1)
+#   column_span:  (default: 1)
+#   page_id:      parent page (default: main_page)
+#   label_font:   font for the label
+#   sensor_font:  font for the sensor value
+#   sensor1_entity: HA sensor entity for temperature
+#   sensor2_entity:    HA sensor entity for humidity
+#   sensor3_entity:    HA sensor entity for pressure
+#   sensor1_unit:   optional, default "°C"
+#   sensor2_unit:      optional, default "%"
+#   sensor3_unit:      optional, default "hPa"
+#   precision:           decimal places (default 1)
+
+
+globals:
+- id: ${uid}_current_value
+  type: float
+  initial_value: '0.0'
+- id: ${uid}_img_state          # 0 = pending, 1 = downloading, 2 = loaded
+  type: uint8_t
+  initial_value: '0'
+
+
+http_request:
+
+image:
+- platform: online_image
+  id: ${uid}_bg_image
+  url: '${image_url | default("http://localhost/no_image.png")}'
+  format: ${image_format | default("AUTO")}
+  type: RGB565
+  transparency: alpha_channel
+  resize: ${image_width | default(128)}x${image_height | default(128)}
+  update_interval: ${image_update_interval | default("never")}
+  on_download_finished:
+  - lambda: id(${uid}_img_state) = 2;
+  - lvgl.image.update:
+      id: img_${uid}
+      src: ${uid}_bg_image
+  - lvgl.widget.show: img_${uid}
+  on_error:
+  - lambda: id(${uid}_img_state) = 0;   # retry on next interval tick
+
+# ── Initial download once the network is up (works with WiFi and Ethernet) ──
+interval:
+- interval: 16s
+  then:
+  - if:
+      condition:
+        lambda: |-
+          return ${ 'true' if (image_url | default('')) != '' else 'false' } &&
+                 id(${uid}_img_state) == 0 &&
+                 network::is_connected();
+      then:
+      - lambda: id(${uid}_img_state) = 1;
+      - component.update: ${uid}_bg_image
+
+
+
+lvgl:
+  pages:
+  - id: !extend ${page_id | default("main_page")}
+    widgets:
+    - container:
+        id: ${uid}_tile
+        grid_cell_row_pos: ${row}
+        grid_cell_column_pos: ${column}
+        grid_cell_row_span: ${row_span | default(1)}
+        grid_cell_column_span: ${column_span | default(1)}
+        grid_cell_x_align: stretch
+        grid_cell_y_align: stretch
+        widgets:
+        - button:
+            bg_opa: ${bg_opa | default("COVER")}
+            clip_corner: true
+#            bg_image_src: ${background}
+#            bg_image_opa: ${bg_image_opa | default("40%")}
+            id: button_${uid}
+            clickable: false
+            widgets:
+            - image:
+                id: img_${uid}
+                src: ${uid}_bg_image
+                align: ${image_alignment | default("center")}
+                opa: ${image_opa | default("COVER")}
+                hidden: true             # shown after successful download
+                y: ${image_y | default(0)}
+                x: ${image_x | default(0)}
+            - label:
+                id: icon_${uid}
+                text_font: $icon_font
+                align: ${icon_alignment | default("top_left")}
+                text_color: $icon_off_color
+                text: ${icon}
+                y: ${icon_y | default(0)}
+                x: ${icon_x | default(0)}
+            - label:
+                id: label_${uid}
+                align: ${label_alignment | default("top_mid")}
+                long_mode: wrap
+                width: 70%
+                text_color: $label_off_color
+                text_font: ${label_font | default(text_font)}
+                text: ${text}
+                y: ${label_y | default(0)}
+                x: ${label_x | default(0)}
+            - label:
+                id: value_1_${uid}
+                align: ${value_1_alignment | default("left_mid")}
+                text_font: ${sensor1_font | default(text_font)}
+                text_color: $label_on_color
+                text: "69.9 °C"
+                y: ${value_1_y | default(0)}
+                x: ${value_1_x | default(0)}
+            - label:
+                id: value_2_${uid}
+                align: ${value_2_alignment | default("right_mid")}
+                text_font: ${sensor2_font | default(text_font)}
+                text_color: $label_on_color
+                text: "12.3 %"
+                y: ${value_2_y | default(0)}
+                x: ${value_2_x | default(0)}
+            - label:
+                id: value_3_${uid}
+                align: ${value_3_alignment | default("bottom_right")}
+                text_font: ${sensor3_font | default(text_font)}
+                text_color: $label_on_color
+                text: "765.4 hPa"
+                y: ${value_3_y | default(0)}
+                x: ${value_3_x | default(0)}
+# ── Subscribe to the HA sensor state ─────────────────────────────────────────
+
+sensor:
+  - platform: homeassistant
+    id: ${uid}_sensor1val
+    entity_id: ${sensor1_entity}
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: value_1_${uid}
+            text:
+              format: "%.1f ${sensor1_unit | default('°C')}"
+              args: [ 'x' ]
+
+  - platform: homeassistant
+    id: ${uid}_sensor2val
+    entity_id: ${sensor2_entity}
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: value_2_${uid}
+            text:
+              format: "%.1f ${sensor2_unit | default('%%')}"
+              args: [ 'x' ]
+
+  - platform: homeassistant
+    id: ${uid}_sensor3val
+    entity_id: ${sensor3_entity}
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: value_3_${uid}
+            text:
+              format: "%.1f ${sensor3_unit | default('hPa')}"
+              args: [ 'x' ]

@@ -1,0 +1,505 @@
+# Substitution variables used through the codebase
+substitutions:
+  icon_font: mdi_icons_30
+  text_font: nunito_20
+  text_color: white
+  bg_color: black
+  button_on_color: "ep_orange"
+  button_off_color: "very_dark_gray"
+  icon_on_color: "yellow"
+  icon_off_color: "gray"
+  label_on_color: "white"
+  label_off_color: "gray"
+  button_text_color: "white"
+  
+  glyphsets: "GF_Latin_Core"
+
+  # LCD back light modes - Code in backlight_time.yaml
+  display_daytime_brightness: "100%"
+  display_nighttime_brightness: "70%"
+  display_night_hour: "23"      # Hour for night mode (0-23)
+  display_night_minute: "59"    # Minute for night mode (0-59)
+  display_backlight_timeout_always_enabled: "false"  # Set true to dim/off in all modes, not just Night
+  display_backlight_timeout_initial: "5"  # Initial backlight timeout in minutes (-1 to disable)
+  popup_timeout_seconds: '120'  # timeout in seconds  
+  # Screen Size
+  screen_height: 480
+  screen_width: 800
+
+
+esphome:
+  name: "waveshareseven"
+  friendly_name: "Waveshare 7 Panel"
+  comment: "Waveshare 7 Panel"
+
+
+logger:
+
+mqtt:
+  id: ws7_display
+  broker: !secret mqtt_broker
+  username: !secret mqtt_username
+  password: !secret mqtt_password
+  discovery: true
+  discovery_retain: true
+  discovery_unique_id_generator: mac
+  discovery_object_id_generator: device_name
+  birth_message:
+  will_message:
+  shutdown_message:
+
+
+script:
+  # --------------------------------------------------------------------------
+  # This script is called once per minute.
+  # Any packages in this library will !extend time_update to update their own labels.
+  # You can add code here to update your own custom labels.
+  # --------------------------------------------------------------------------
+  - id: time_update
+    then:
+      - lambda: |-
+          // No operation
+
+packages:
+  # Generic configuration for ESP32 screens
+  # Include Wi-Fi support
+  wifi: !include esphome-modular-lvgl-buttons/common/wifi.yaml
+  # Enable OTA updates with a status screen
+  ota_screen: !include esphome-modular-lvgl-buttons/common/ota.yaml
+   # Some basic sensors
+  sensors: !include esphome-modular-lvgl-buttons/common/sensors_base.yaml
+  # Styles + Themes + Some nice basic fonts + 1000s of glyphs + all the colors
+  theme:  !include esphome-modular-lvgl-buttons/common/theme/index.yaml
+  # Use this theme for debugging
+  # theme:  !include esphome-modular-lvgl-buttons/common/theme/index_debug.yaml  # uncomment to enable debug outlines
+  # Include if your touch screen has a backlight. Also sets the time from HA
+  backlight: !include esphome-modular-lvgl-buttons/common/backlight_time.yaml
+  # Popup system — code for popup pages lives here, but the popups themselves are defined in the UI section below
+  popup_system: !include esphome-modular-lvgl-buttons/ui/popup/popup_system.yaml
+  
+  # Hardware description file
+  hardware: !include
+    file: esphome-modular-lvgl-buttons/hardware/waveshare-esp32-s3-touch-lcd-7.yaml
+    vars:
+      rotation: "0"  # set screen rotation 0, 90, 180, 270
+  # Media Player and Voice Assistant
+  #media_voice: !include esphome-modular-lvgl-buttons/hardware/media_player-voice_assistant.yaml
+
+  # Basic boot screen with ESPHome logo and device diagnostic info
+  loading_screen: !include esphome-modular-lvgl-buttons/pages/loading.yaml
+  # info screen - WiFi login, IP address, MAC address etc
+  info_screen: !include esphome-modular-lvgl-buttons/pages/info.yaml
+
+
+  outdoor_temp_tile: !include
+    file: draft/ui/sensor/remote_remoteimage.yaml
+    vars:
+      uid: outdoor_temp_img
+      entity_id: sensor.sensor_bmp280_2_bmp280_2_temperature_2
+      page_id: main_page
+      row: 0
+      column: 0
+      text: "vorne box"
+      label_alignment: top_left
+      label_font: nunito_20
+      value_alignment: bottom_mid
+      unit: "°C"
+      image_url: "http://192.168.178.119:8123/local/images/tile_bg_vor_dem_haus.png"
+      image_format: PNG
+      image_width: 100
+      image_height: 120
+      image_opa: 70%
+
+
+
+  temp_multi_1_display: !include     # Wohnzimmer & Küche
+    file: draft/ui/sensor/remote_area_double_remoteimage.yaml
+    vars:
+      uid: temp_multi_1_display 
+      sensor_entity1: "sensor.sensor_bmp280_3_bmp280_3_temperature_2" # WZ
+      sensor_entity2: "sensor.sensor_bmp280_4_bmp280_4_temperature_2" #Küche
+      sensor_1_icon: $mdi_sofa
+      sensor_2_icon: $mdi_silverware_fork_knife
+      sensor_unit1: "°C"
+      image_url: "http://192.168.178.119:8123/local/images/tile_bg_erdgeschoss.png"
+      image_format: PNG
+      image_width: 200
+      image_height: 120
+      icon_alignment: top_left
+      label_alignment: top_right
+      icon_t1_alignment: center
+      icon_t1_x: -30
+      value_alignment: right_mid
+      value_x: 0
+      icon_t2_alignment: bottom_mid
+      icon_t2_x: -30
+      value_snd_alignment: bottom_right
+      value_snd_x: 0
+
+      row: 0
+      column: 1
+      column_span: 2
+      text: "EG"
+      icon: $mdi_thermometer
+      sensor_font: "nunito_24"
+      label_font: "nunito_24"      
+      unit: "%"
+      precision: 1
+      page_id: "main_page"  
+
+  temp_display: !include
+    file: draft/ui/sensor/remote_area_triple_remoteimage.yaml
+    vars:
+      uid: temp_display
+      sensor1_entity: "sensor.cyd1_temperatur_2"
+      sensor2_entity: "sensor.cyd1_luftfeuchtigkeit_2"
+      sensor3_entity: "sensor.cyd1_luftdruck_2"
+      row: 0
+      column: 3
+      column_span: 2
+      image_url: "http://192.168.178.119:8123/local/images/tile_klima_bg.png"
+      image_format: PNG
+      image_width: 200
+      image_height: 120      
+      text: "Display"
+      sensor1_font: "nunito_24"
+      sensor2_font: "nunito_20"
+      sensor3_font: "nunito_20"
+      label_font: "nunito_24"
+      icon: $mdi_thermometer
+      unit: "°C"
+      precision: 1
+      page_id: "main_page"
+
+
+  page_button_main_media: !include
+    file: draft/ui/page/page_button_remoteimage.yaml
+    vars:
+      image_url: "http://192.168.178.119:8123/local/images/tile_media.png"
+      image_format: PNG
+      image_width: 200
+      image_height: 120        
+      uid: page_button_main_media
+      row: 3
+      column: 0
+      column_span: 2      
+      text: "Media"
+      icon: $mdi_page_next
+      page_id: "main_page"
+      click_page: "main_page"
+  
+  main_cam_button: !include
+    file: draft/ui/page/page_camerabutton.yaml
+    vars:
+      camera_url: "http://192.168.178.27:180/rd/esp32s3camX_256.jpg"
+      update_interval: "1800s"
+      image_width: 256
+      image_height: 192           
+      uid: page_main_cam_button
+      row: 0
+      column: 5
+      column_span: 2      
+      row_span: 2
+      text: "Cam -not live"
+      icon: $mdi_page_next
+      page_id: "main_page"
+      click_page: "main_page"
+
+
+
+  temp_heating_vorlauf_btn: !include
+    file: draft/ui/sensor/remote_remoteimage.yaml
+    vars:
+      uid: temp_heating_vorlauf
+      entity_id: "sensor.boiler_curflowtemp"
+      row: 1
+      column: 2
+      column_span: 2
+      background: bg_heizung_zl
+      image_url: "http://192.168.178.119:8123/local/images/temp_heizung_zulauf.png"
+      image_format: PNG
+      image_width: 200
+      image_height: 120           
+      page_id: "main_page"
+    #  text: "Zulauf"
+      value_alignment: bottom_right
+      value_x: -10
+      value_y: -10
+      label_alignment: right_mid
+      icon_alignment: bottom_mid
+    #  icon: $mdi_thermometer
+      unit: "°C"
+      precision: 1
+      sensor_font: "nunito_20"
+
+
+
+  power_einspeisung_btn: !include
+    file: draft/ui/sensor/remote_numeric_imageswitch_remoteimages.yaml
+    vars:
+      uid: power_einspeisung
+      entity_id: "sensor.stromzahler_momentanwirkleistung"
+      #attribute:             HA attribute to display instead of state (optional, default: state)
+      row: 2
+      row_span: 1
+      column: 0
+      column_span: 2
+      unit: "W"
+      precision: 0
+      sensor_font: "nunito_24"
+      value_alignment: bottom_right
+    #  text: "Zählerfluss"
+    #   label_font:          
+      label_alignment: right_mid
+    #  icon: $mdi_thermometer
+      icon_alignment: bottom_mid
+      image_url: "http://192.168.178.119:8123/local/images/netzeinspeisung.png"
+      image_width: 200         #  image is scaled to fit inside this width  (default: 128)
+      image_height: 120        # image is scaled to fit inside this height (default: 128)
+    #                          (aspect ratio is preserved)
+      image_format: PNG    #      AUTO | PNG | JPEG | BMP | QOI   (default: AUTO, needs a correct
+    #                          Content-Type from the server – set explicitly if decoding fails)
+    #   image_alignment:       LVGL align of the image (default: center)
+    #   image_opa:             opacity of the image, e.g. 60% to keep text readable (default: COVER)
+    #   image_update_interval: re-download interval, e.g. 15min (default: never = load once)
+    #   ── Value-dependent background ──
+      threshold: 1         #    value > threshold → "high" look, otherwise "low" look (default: 0)
+    #   bg_opa:                background opacity. 0%-100% or TRANSP / COVER (optional, default: COVER)
+    #   bg_color_low:          background colour, low state   (default: $button_off_color)
+    #   bg_color_high:         background colour, high state  (default: same as bg_color_low)
+    #   bg_grad_color_low:     2nd gradient colour, low state  (default: same as bg_color_low)
+    #   bg_grad_color_high:    2nd gradient colour, high state (default: same as bg_color_high)
+    #   bg_grad_dir:           NONE | VER | HOR (default: NONE = solid colour)
+      image_url_high: "http://192.168.178.119:8123/local/images/netzbezug_aktuell.png"
+      page_id: "main_page"   
+
+
+  img_heating_mode_btn: !include
+    file: draft/ui/sensor/remote_text_imageswitch_remoteimages.yaml
+    vars:
+      uid: img_heating_mode
+      entity_id: "select.thermostat_hc1_mode"
+      row: 1
+      column: 0
+      image_format: PNG
+     # text: "Wohnzimmer"
+     # bg_grad_dir: VER
+     # bg_color: "0x2A3A5C"
+     # bg_grad_color: "0x18213A"
+      state_1: "auto"
+      state_1_label: "Auto"
+      state_1_image_url: "http://192.168.178.119:8123/local/images/heizung_automatisch.png"
+     # state_1_bg_color: "0x2A2A30"
+     # state_1_bg_grad_color: "0x141418"
+      state_2: "day"
+      state_2_label: "ManD"
+      state_2_image_url: "http://192.168.178.119:8123/local/images/heizung_manuell.png"
+     # state_2_bg_color: "0x8A4A2A"
+     # state_2_bg_grad_color: "0x3A2A48"
+      state_3: "night"
+      state_3_label: "ManN"
+      state_3_image_url: "http://192.168.178.119:8123/local/images/heizung_manuell.png"
+     # state_3_bg_color: "0x2C5A6A"
+     # state_3_bg_grad_color: "0x18213A"
+      page_id: "main_page" 
+
+
+#
+  media_vero_play_yoga_akt_btn: !include
+    file: draft/ui/button/remote_remoteimage.yaml
+    vars:
+      uid: media_vero_play_yoga_akt_btn
+      entity_id: "script.vero_play_yoga_neu"
+      row: 3
+      column: 3
+      column_span: 1      
+      text: "Yoga aktuell"
+      page_id: "main_page"
+      image_url: "http://192.168.178.119:8123/local/images/tile_yoga_aktuell.png"
+      image_width: 100         #  image is scaled to fit inside this width  (default: 128)
+      image_height: 120        # image is scaled to fit inside this height (default: 128)
+    #                          (aspect ratio is preserved)
+      image_format: PNG    #      AUTO | PNG | JPEG | BMP | QOI   (default: AUTO, needs a correct
+
+  sendspin_info_btn: !include
+    file: draft/ui/sensor/sendspin.yaml
+    vars:
+      uid: sendspin_info
+      row: 3
+      column: 4
+      column_span: 2      
+      page_id: "main_page"
+      label_font_title: nunito_14
+      label_font_artist: nunito_12
+      artist_y: 10
+      label_font_album: nunito_12
+
+
+
+  mycalendar: !include
+    file: draft/ui/calendar/calendar_backend.yaml
+    vars:
+      cal_sensor: sensor.display_kalender
+      page_id: "cal_page" 
+      row: 0
+      column: 0
+
+
+#  _____           _          __                    _                         
+# | ____|_ __   __| |   ___  / _|  _ __   __ _  ___| | ____ _  __ _  ___  ___ 
+# |  _| | '_ \ / _` |  / _ \| |_  | '_ \ / _` |/ __| |/ / _` |/ _` |/ _ \/ __|
+# | |___| | | | (_| | | (_) |  _| | |_) | (_| | (__|   < (_| | (_| |  __/\__ \
+# |_____|_| |_|\__,_|  \___/|_|   | .__/ \__,_|\___|_|\_\__,_|\__, |\___||___/
+#                                 |_|                         |___/           
+
+
+
+button:
+  - platform: template
+    name: "Display vorherige Seite"
+    icon: "mdi:arrow-left"
+    on_press:
+      - lvgl.page.previous
+
+  - platform: template
+    name: "Display nächste Seite"
+    icon: "mdi:arrow-right"
+    on_press:
+      - lvgl.page.next
+
+output:
+  - id: !remove fake_backlight_output
+  - platform: ledc
+    id: backlight_pwm
+    pin: GPIO16
+    min_power: 0.07
+    zero_means_zero: true
+
+light:
+  - id: !extend display_backlight
+    output: backlight_pwm
+    restore_mode: ALWAYS_ON
+
+
+touchscreen:
+  platform: gt911
+  id: my_touchscreen
+  display: my_display
+  i2c_id: bus_a
+  interrupt_pin: GPIO4
+  reset_pin:
+    ch422g: ch422g_hub
+    number: 1
+    mode: OUTPUT
+  transform:
+    swap_xy: false
+    mirror_x: false
+    mirror_y: false
+
+debug:
+  update_interval: 10s
+
+sensor:
+  - platform: debug
+    free:
+      name: "Heap frei"
+    block:
+      name: "Heap größter Block"
+    psram:
+      name: "PSRAM frei"
+    loop_time:
+      name: "Loop Time"
+  - id: !extend cpu_temperature
+    filters: !remove
+    unit_of_measurement: "°C"
+
+
+
+
+# This is the main LVGL section. We start with a simple grid.
+lvgl:
+
+  gradients:
+    - id: page_bg_grad
+      direction: VER          # oben → unten
+      dither: ORDERED         # verhindert Streifenbildung bei RGB565
+      stops:
+        - color: 0x2B2442     # Dämmer-Violett (Echo des Kupfertons)
+          position: 0
+        - color: 0x18213A     # Navy, passend zu den Kacheln
+          position: 110
+        - color: 0x0A0F1E     # Nachtblau
+          position: 255
+
+  buffer_size: 100%
+  pages:
+    - id: main_page
+      layout: 4x8
+      styles: page_style
+      bg_color: 0x18213A      # Fallback
+      bg_opa: COVER
+      bg_grad: page_bg_grad
+      <<: !include esphome-modular-lvgl-buttons/common/swipe_navigation.yaml
+
+    - id: cal_page
+      styles: page_style
+      bg_color: 0x18213A      # Fallback
+      bg_opa: COVER
+      bg_grad: page_bg_grad      
+      <<: !include esphome-modular-lvgl-buttons/common/swipe_navigation.yaml      
+      widgets:
+        - !include
+          file: draft/ui/calendar/calendar_widget.yaml   # Pfad relativ zur Hauptdatei anpassen
+
+
+        # You can use the package section above to add prebuilt button types or build your own custom button from scratch here.
+        #- container:
+        #    id: button_12
+        #    grid_cell_x_align: stretch
+        #    grid_cell_y_align: stretch
+        #    grid_cell_row_pos: 3
+        #    grid_cell_column_pos: 4
+        #    grid_cell_row_span: 1
+        #    grid_cell_column_span: 1
+        #    outline_width: 1   # debug code - This is for visualizing boundaries remove for production
+        #    outline_color: red  # debug code - This is for visualizing boundaries remove for production
+        #    widgets:
+        #      - label:
+        #          text_font: $text_font
+        #          align: center
+        #          text_color: white
+        #          text: "Cell 3,7"
+
+# If you want to use other icons add them to the list here
+font:
+  # http://materialdesignicons.com/cdn/7.4.47/
+  - file: 'https://github.com/Templarian/MaterialDesign-Webfont/raw/v7.4.47/fonts/materialdesignicons-webfont.ttf'
+    id: mdi_icons_30
+    size: 30
+    bpp: 8
+    glyphs: [
+      $mdi_bed,  # mdi-bed - bedroom icon
+      $mdi_brightness_6,  # mdi-brightness-6 - brightness slider icon
+      $mdi_bulkhead_light,  # mdi-bulkhead-light - bulkhead fixture
+      $mdi_ceiling_fan_light,  # mdi-ceiling-fan-light - ceiling fan with light
+      $mdi_ceiling_light,  # mdi-ceiling-light - ceiling fixture
+      $mdi_chevron_down,  # mdi-chevron-down - close/collapse button
+      $mdi_chevron_up,  # mdi-chevron-up - back/expand button
+      $mdi_circle_opacity,  # mdi-circle-opacity - saturation slider icon
+      $mdi_coach_lamp,  # mdi-coach-lamp - outdoor coach light
+      $mdi_eyedropper,  # mdi-eyedropper - spectrum mode toggle
+      $mdi_floor_lamp,  # mdi-floor-lamp - floor lamp
+      $mdi_grid,  # mdi-grid - grid mode toggle
+      $mdi_home,  # mdi-home - home/back navigation
+      $mdi_information_box,  # mdi-information-box - info screen
+      $mdi_lamp,  # mdi-lamp - table lamp
+      $mdi_led_strip,  # mdi-led-strip - LED strip light
+      $mdi_lightbulb,  # mdi-lightbulb - generic bulb icon
+      $mdi_page_next,
+      $mdi_silverware_fork_knife,
+      $mdi_sofa,
+      $mdi_string_lights,  # mdi-string-lights - decorative string lights
+      $mdi_thermometer,
+      $mdi_track_light,  # mdi-track-light - track lighting
+      $mdi_white_balance_sunny,  # mdi-white-balance-sunny - color temp/sun icon
+    ]

@@ -1,0 +1,110 @@
+---
+# Change page button
+# Short click opens page_id page
+#
+# vars:
+#   uid:          unique identifier
+#   row:          grid row
+#   column:       grid column
+#   text:         tile label
+#   icon:         icon glyph (required — e.g. $mdi_page_next or $mdi_page_previous)
+#   row_span:     (default: 1)
+#   column_span:  (default: 1)
+#   page_id:      parent page (default: main_page)
+#   click_page:   destination page name (default: main_page)
+#   image_url:             URL of a PNG/JPEG background image (optional – no image if omitted)
+#   image_width:           image is scaled to fit inside this width  (default: 128)
+#   image_height:          image is scaled to fit inside this height (default: 128)
+#                          (aspect ratio is preserved)
+#   image_format:          AUTO | PNG | JPEG | BMP | QOI   (default: AUTO, needs a correct
+#                          Content-Type from the server – set explicitly if decoding fails)
+#   image_alignment:       LVGL align of the image (default: center)
+#   image_opa:             opacity of the image, e.g. 60% to keep text readable (default: COVER)
+#   image_update_interval: re-download interval, e.g. 15min (default: never = load once)
+
+globals:
+- id: ${uid}_current_value
+  type: float
+  initial_value: '0.0'
+- id: ${uid}_img_state          # 0 = pending, 1 = downloading, 2 = loaded
+  type: uint8_t
+  initial_value: '0'
+
+http_request:
+
+image:
+- platform: online_image
+  id: ${uid}_bg_image
+  url: '${image_url | default("http://localhost/no_image.png")}'
+  format: ${image_format | default("AUTO")}
+  type: RGB565
+  transparency: alpha_channel
+  resize: ${image_width | default(128)}x${image_height | default(128)}
+  update_interval: ${image_update_interval | default("never")}
+  on_download_finished:
+  - lambda: id(${uid}_img_state) = 2;
+  - lvgl.image.update:
+      id: img_${uid}
+      src: ${uid}_bg_image
+  - lvgl.widget.show: img_${uid}
+  on_error:
+  - lambda: id(${uid}_img_state) = 0;   # retry on next interval tick
+
+# ── Initial download once the network is up (works with WiFi and Ethernet) ──
+interval:
+- interval: 10s
+  then:
+  - if:
+      condition:
+        lambda: |-
+          return ${ 'true' if (image_url | default('')) != '' else 'false' } &&
+                 id(${uid}_img_state) == 0 &&
+                 network::is_connected();
+      then:
+      - lambda: id(${uid}_img_state) = 1;
+      - component.update: ${uid}_bg_image
+
+# This section adds a button to an LVGL page
+lvgl:
+  pages:
+    - id: !extend ${page_id | default("main_page")}
+      widgets:
+        - container:
+            id: ${uid}
+            grid_cell_row_pos: ${row}
+            grid_cell_column_pos: ${column}
+            grid_cell_row_span: ${row_span | default(1)}
+            grid_cell_column_span: ${column_span | default(1)}
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            # outline_width: 1
+            # outline_color: red
+            widgets:
+            - button:
+                id: button_${uid}
+                clip_corner: true  
+                widgets:
+                  - image:
+                      id: img_${uid}
+                      src: ${uid}_bg_image
+                      align: ${image_alignment | default("center")}
+                      opa: ${image_opa | default("COVER")}
+                      hidden: true             # shown after successful download
+                      y: ${image_y | default(0)}
+                      x: ${image_x | default(0)}
+
+
+                  - label:
+                      text_font: $icon_font
+                      align: top_left
+                      id: icon_${uid}
+                      text_color: $label_off_color
+                      text: ${icon}
+                  - label:
+                      align: bottom_left
+                      id: label_${uid}
+                      text_color: $label_off_color
+                      text: ${text}
+                on_short_click:
+                    then:
+                      lvgl.page.show: ${click_page | default("main_page")}

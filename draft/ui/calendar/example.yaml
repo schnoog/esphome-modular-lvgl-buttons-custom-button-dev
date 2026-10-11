@@ -1,0 +1,7 @@
+  mycalendar: !include
+    file: draft/ui/calendar/calendar_backend.yaml
+    vars:
+      cal_sensor: sensor.display_kalender
+      page_id: "cal_page" 
+      row: 0
+      column: 0

@@ -1,0 +1,11 @@
+
+.esphome
+esphome-modular-lvgl-buttons
+secrets.yaml
+venv
+.esphome/*
+esphome-modular-lvgl-buttons/*
+venv/*
+
+_ws7memore_analyzed.txt
+dump.yaml
