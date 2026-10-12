@@ -54,7 +54,10 @@ globals:
 - id: ${uid}_current_album
   type: std::string
   initial_value: '""'
-
+- id: ${uid}_sendspin_album_art_valid
+  type: bool
+  restore_value: no
+  initial_value: "false"
 
 sendspin:
   id: ${uid}_sendspin_hub
@@ -102,23 +105,78 @@ text_sensor:
 
 
 image:
+  - platform: file
+    id: ${uid}_fallback_image
+    file: ${fallback_image | default("https://raw.githubusercontent.com/RealDeco/xiaozhi-esphome/main/images/HA-character/240x240/playing.png")}
+    resize: ${image_width | default(60)}x${image_height | default(60)}
+    type: RGB565
+    dither: NONE
+
   - platform: sendspin
     id: ${uid}_album_slot
     format: JPEG
     type: RGB565
     resize: ${image_width | default(60)}x${image_height | default(60)}
     source: album
+    display_offset: ${fade_offset | default("1s")}
     current_image:
       id: ${uid}_album_art
+    transition_image:
+      id: ${uid}_album_art_transition
     on_image_display:
+      - logger.log: "Cover: display"
+      # Outgoing = previous cover, or fallback if none was shown yet
+      - if:
+          condition:
+            lambda: 'return id(${uid}_sendspin_album_art_valid);'
+          then:
+            - lvgl.image.update:
+                id: ${uid}_cover_outgoing
+                src: ${uid}_album_art_transition
+          else:
+            - lvgl.image.update:
+                id: ${uid}_cover_outgoing
+                src: ${uid}_fallback_image
+      - lambda: id(${uid}_sendspin_album_art_valid) = true;
       - lvgl.image.update:
           id: ${uid}_cover_widget
           src: ${uid}_album_art
-      - logger.log: "Cover: display"
+      - lvgl.animation.start: ${uid}_cover_crossfade
+    on_image_clear:
+      - logger.log: "Cover: clear"
+      - lambda: id(${uid}_sendspin_album_art_valid) = false;
+      - lvgl.image.update:
+          id: ${uid}_cover_outgoing
+          src: ${uid}_album_art_transition
+      - lvgl.image.update:
+          id: ${uid}_cover_widget
+          src: ${uid}_fallback_image
+      - lvgl.animation.start: ${uid}_cover_fade_out
+    on_image_error:
+      - logger.log:
+          level: WARN
+          format: "Cover: Fehler"
 
 
 
 lvgl:
+  animations:
+    - id: ${uid}_cover_crossfade
+      duration: ${fade_duration | default("2s")}
+      widgets:
+        - id: ${uid}_cover_outgoing
+          opa:
+            from: 100%
+            to: 0%
+      on_stop:
+        - sendspin.image.transition_finished: ${uid}_album_slot
+    - id: ${uid}_cover_fade_out
+      duration: ${fade_duration | default("2s")}
+      widgets:
+        - id: ${uid}_cover_outgoing
+          opa:
+            from: 100%
+            to: 0%
   pages:
   - id: !extend ${page_id | default("main_page")}
     widgets:
@@ -135,13 +193,19 @@ lvgl:
             id: button_${uid}
             clickable: false
             widgets:
-            - image:
+            - image:                       # incoming / current cover
                 id: ${uid}_cover_widget
-                align: ${image_alignment | default("left_mid")} 
+                align: ${image_alignment | default("left_mid")}
+                x: ${image_x | default(6)}
                 y: ${image_y | default(6)}
-                x: ${image_x | default(0)}
-                src: ${uid}_album_art
-               # hidden: true
+                src: ${uid}_fallback_image
+            - image:                       # outgoing, fades out on top
+                id: ${uid}_cover_outgoing
+                align: ${image_alignment | default("left_mid")}
+                x: ${image_x | default(6)}
+                y: ${image_y | default(6)}
+                src: ${uid}_fallback_image
+                opa: 0%
             - label:
                 id: value_title_${uid}
                 align:  ${title_alignment | default("top_right")}  

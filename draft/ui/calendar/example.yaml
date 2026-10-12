@@ -5,3 +5,15 @@
       page_id: "cal_page" 
       row: 0
       column: 0
+
+
+
+
+    - id: cal_page
+      styles: page_style
+      bg_color: 0x18213A      # Fallback
+      bg_opa: COVER
+      <<: !include esphome-modular-lvgl-buttons/common/swipe_navigation.yaml      
+      widgets:
+        - !include
+          file: draft/ui/calendar/calendar_widget.yaml   # Pfad relativ zur Hauptdatei anpassen

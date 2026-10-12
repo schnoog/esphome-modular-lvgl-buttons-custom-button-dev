@@ -1,6 +1,6 @@
 ---
 # Change page button
-# Short click opens page_id page
+# Short click opens click_page page
 #
 # vars:
 #   uid:          unique identifier
