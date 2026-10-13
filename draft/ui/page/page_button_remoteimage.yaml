@@ -1,26 +1,34 @@
----
-# Change page button
-# Short click opens click_page page
+# Page button tile with remote image — navigates to another LVGL page on tap.
+# Optional background image is downloaded from a URL (online_image) once the
+# network is up; icon and label are drawn on top of it.
 #
 # vars:
-#   uid:          unique identifier
-#   row:          grid row
-#   column:       grid column
-#   text:         tile label
-#   icon:         icon glyph (required — e.g. $mdi_page_next or $mdi_page_previous)
-#   row_span:     (default: 1)
-#   column_span:  (default: 1)
-#   page_id:      parent page (default: main_page)
-#   click_page:   destination page name (default: main_page)
-#   image_url:             URL of a PNG/JPEG background image (optional – no image if omitted)
-#   image_width:           image is scaled to fit inside this width  (default: 128)
-#   image_height:          image is scaled to fit inside this height (default: 128)
-#                          (aspect ratio is preserved)
-#   image_format:          AUTO | PNG | JPEG | BMP | QOI   (default: AUTO, needs a correct
-#                          Content-Type from the server – set explicitly if decoding fails)
-#   image_alignment:       LVGL align of the image (default: center)
-#   image_opa:             opacity of the image, e.g. 60% to keep text readable (default: COVER)
-#   image_update_interval: re-download interval, e.g. 15min (default: never = load once)
+#   uid:                    unique identifier (also used as container ID)
+#   row:                    grid row
+#   column:                 grid column
+#   text:                   label shown bottom left
+#   icon:                   icon glyph shown top left
+#   click_page:             page to show on tap                     (default: main_page)
+#   row_span:               (default: 1)
+#   column_span:            (default: 1)
+#   page_id:                parent page                             (default: main_page)
+#   image_url:              image URL (optional; if not set, no image is loaded)
+#   image_format:           image format                            (default: AUTO)
+#   image_width:            image width in px                       (default: 128)
+#   image_height:           image height in px                      (default: 128)
+#   image_update_interval:  re-download interval, e.g. "30min"      (default: never)
+#   image_alignment:        image alignment inside the tile         (default: center)
+#   image_x:                image x offset                          (default: 0)
+#   image_y:                image y offset                          (default: 0)
+#   image_opa:              image opacity. 0%-100% or TRANSP/COVER  (default: COVER)
+#
+# requires:
+#   $icon_font, $label_off_color (theme), network connection
+#
+# notes:
+#   - Download is attempted every 10 s until it succeeds; on error it retries.
+#   - The image stays hidden until the first successful download.
+#   - RAM: width x height x 3 bytes (RGB565 + alpha), 128x128 ≈ 48 kB.
 
 globals:
 - id: ${uid}_current_value

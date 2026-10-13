@@ -133,8 +133,8 @@ packages:
       value_x: 0
       icon_t2_alignment: bottom_mid
       icon_t2_x: -30
-      value_snd_alignment: bottom_right
-      value_snd_x: 0
+      value_sensor2_alignment: bottom_right
+      value_sensor2_x: 0
 
       row: 0
       column: 1

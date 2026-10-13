@@ -1,29 +1,59 @@
-# Remote sensor tile — displays a live value from a Home Assistant sensor entity.
+# Remote area tile (triple) — shows three HA sensor values for an area,
+# e.g. temperature, humidity and air pressure, with an optional remote
+# background image.
 # Read-only: no action scripts, no detail page.
+# Background image is downloaded from a URL (online_image) once the network
+# is up; icon, label and values are drawn on top of it.
 #
 # vars:
-#   uid:          unique identifier
-#   entity_id:    HA sensor entity, e.g. "sensor.outdoor_sensor1val"
-#   attribute:    HA attribute to display instead of state (optional, default: state)
-#   row:          grid row
-#   column:       grid column
-#   text:         sensor name shown on tile
-#   icon:         icon glyph
-#   bg_opa:       background opacity. 0%-100% or text TRANSP or COVER, for fully opaque (optional, default: COVER)
-#   unit:         unit string appended to value, e.g. "°C"  (optional, default "")
-#   precision:    decimal places                             (optional, default 1)
-#   row_span:     (default: 1)
-#   column_span:  (default: 1)
-#   page_id:      parent page (default: main_page)
-#   label_font:   font for the label
-#   sensor_font:  font for the sensor value
-#   sensor1_entity: HA sensor entity for temperature
-#   sensor2_entity:    HA sensor entity for humidity
-#   sensor3_entity:    HA sensor entity for pressure
-#   sensor1_unit:   optional, default "°C"
-#   sensor2_unit:      optional, default "%"
-#   sensor3_unit:      optional, default "hPa"
-#   precision:           decimal places (default 1)
+#   uid:                    unique identifier
+#   row:                    grid row
+#   column:                 grid column
+#   text:                   area name shown at the top (wraps, 70% width)
+#   icon:                   icon glyph shown top left
+#   row_span:               (default: 1)
+#   column_span:            (default: 1)
+#   page_id:                parent page                             (default: main_page)
+#   bg_opa:                 background opacity. 0%-100% or TRANSP/COVER (default: COVER)
+#   label_font:             font for the area name                  (default: text_font)
+#
+#   sensor1_entity:         first HA sensor entity, e.g. "sensor.living_room_temperature"
+#   sensor2_entity:         second HA sensor entity
+#   sensor3_entity:         third HA sensor entity
+#   sensor1_unit:           unit appended to value 1                (default: "°C")
+#   sensor2_unit:           unit appended to value 2                (default: "%%")
+#   sensor3_unit:           unit appended to value 3                (default: "hPa")
+#   sensor1_font:           font for value 1                        (default: text_font)
+#   sensor2_font:           font for value 2                        (default: text_font)
+#   sensor3_font:           font for value 3                        (default: text_font)
+#
+#   image_url:              image URL (optional; if not set, no image is loaded)
+#   image_format:           image format                            (default: AUTO)
+#   image_width:            image width in px                       (default: 128)
+#   image_height:           image height in px                      (default: 128)
+#   image_update_interval:  re-download interval, e.g. "30min"      (default: never)
+#   image_alignment:        image alignment inside the tile         (default: center)
+#   image_x, image_y:       image offset                            (default: 0, 0)
+#   image_opa:              image opacity. 0%-100% or TRANSP/COVER  (default: COVER)
+#
+#   icon_alignment:         (default: top_left)      icon_x, icon_y:       (default: 0, 0)
+#   label_alignment:        (default: top_mid)       label_x, label_y:     (default: 0, 0)
+#   value_1_alignment:      (default: left_mid)      value_1_x, value_1_y: (default: 0, 0)
+#   value_2_alignment:      (default: right_mid)     value_2_x, value_2_y: (default: 0, 0)
+#   value_3_alignment:      (default: bottom_right)  value_3_x, value_3_y: (default: 0, 0)
+#
+# requires:
+#   $icon_font, $icon_off_color, $label_off_color, $label_on_color, text_font (theme),
+#   network connection, HA API connection
+#
+# notes:
+#   - Values are shown with 1 decimal; "69.9 °C", "12.3 %" and "765.4 hPa"
+#     are placeholders until the first value arrives.
+#   - For a percent unit use "%%", since the unit is part of a printf
+#     format string.
+#   - Download is attempted every 16 s until it succeeds; on error it retries.
+#   - The image stays hidden until the first successful download.
+#   - RAM: width x height x 3 bytes (RGB565 + alpha), 128x128 ≈ 48 kB.
 
 
 globals:

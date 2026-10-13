@@ -1,33 +1,62 @@
-# Remote sensor tile — displays a live value from a Home Assistant sensor entity.
+# Remote area tile (double) — shows two HA sensor values for an area,
+# e.g. temperature + humidity, with an optional remote background image.
 # Read-only: no action scripts, no detail page.
+# Background image is downloaded from a URL (online_image) once the network
+# is up; icons, label and values are drawn on top of it.
 #
 # vars:
-#   uid:          unique identifier
-#   entity_id:    HA sensor entity, e.g. "sensor.outdoor_temperature"
-#   attribute:    HA attribute to display instead of state (optional, default: state)
-#   row:          grid row
-#   column:       grid column
-#   text:         sensor name shown on tile
-#   icon:         icon glyph
-#   bg_opa:       background opacity. 0%-100% or text TRANSP or COVER, for fully opaque (optional, default: COVER)
-#   unit:         unit string appended to value, e.g. "°C"  (optional, default "")
-#   precision:    decimal places                             (optional, default 1)
-#   row_span:     (default: 1)
-#   column_span:  (default: 1)
-#   page_id:      parent page (default: main_page)
-#   label_font:   font for the label
-#   sensor_font:  font for the sensor value
-#   sensor_entity1: HA sensor entity for temperature
-#   sensor_entity2: Second sensor
-#   sensor_unit1:   optional, default "°C"
-#   sensor_unit2:   optional, default "°C"
-#   sensor_1_icon: .......
-#   sensor_2_icon: .......
+#   uid:                    unique identifier
+#   row:                    grid row
+#   column:                 grid column
+#   text:                   area name shown at the top (clipped, 80% width)
+#   icon:                   icon glyph shown top left
+#   row_span:               (default: 1)
+#   column_span:            (default: 1)
+#   page_id:                parent page                             (default: main_page)
+#   bg_opa:                 background opacity. 0%-100% or TRANSP/COVER (default: COVER)
+#
+#   sensor_entity1:         first HA sensor entity, e.g. "sensor.living_room_temperature"
+#   sensor_entity2:         second HA sensor entity
+#   sensor_unit1:           unit appended to value 1                (default: "°C")
+#   sensor_unit2:           unit appended to value 2                (default: "°C")
+#   sensor_1_icon:          icon glyph in front of value 1
+#   sensor_2_icon:          icon glyph in front of value 2
+#   sensor_font:            font for both values                    (default: text_font)
+#   label_font:             font for the area name                  (default: text_font)
+#
+#   image_url:              image URL (optional; if not set, no image is loaded)
+#   image_format:           image format                            (default: AUTO)
+#   image_width:            image width in px                       (default: 128)
+#   image_height:           image height in px                      (default: 128)
+#   image_update_interval:  re-download interval, e.g. "30min"      (default: never)
+#   image_alignment:        image alignment inside the tile         (default: center)
+#   image_x, image_y:       image offset                            (default: 0, 0)
+#   image_opa:              image opacity. 0%-100% or TRANSP/COVER  (default: COVER)
+#
+#   icon_alignment:         (default: top_left)      icon_x, icon_y:         (default: 0, -10)
+#   label_alignment:        (default: top_mid)       label_x, label_y:       (default: 15, -10)
+#   icon_t1_alignment:      (default: left_mid)      icon_t1_x, icon_t1_y:   (default: 0, 0)
+#   value_alignment:        (default: left_mid)      value_x, value_y:       (default: 0, 0)
+#   icon_t2_alignment:      (default: bottom_left)   icon_t2_x, icon_t2_y:   (default: 0, 0)
+#   value_sensor2_alignment:    (default: bottom_left)   value_sensor2_x, value_sensor2_y: (default: 0, 0)
+#
+# requires:
+#   $icon_font, $icon_off_color, $label_off_color, $label_on_color, text_font (theme),
+#   network connection, HA API connection
+#
+# notes:
+#   - Values are shown with 1 decimal; "69.9 °C" is a placeholder until the
+#     first value arrives.
+#   - Icon and value share the same default alignment: set value_x /
+#     value_sensor2_x to an offset, otherwise they overlap.
+#   - For a percent unit use "%%" (e.g. sensor_unit2: "%%"), since the unit
+#     is part of a printf format string.
+#   - Download is attempted every 14 s until it succeeds; on error it retries.
+#   - The image stays hidden until the first successful download.
+#   - RAM: width x height x 3 bytes (RGB565 + alpha), 128x128 ≈ 48 kB.
+
 
 globals:
-- id: ${uid}_current_value
-  type: float
-  initial_value: '0.0'
 - id: ${uid}_img_state          # 0 = pending, 1 = downloading, 2 = loaded
   type: uint8_t
   initial_value: '0'
@@ -147,13 +176,13 @@ lvgl:
                 x: ${icon_t2_x | default(0)}
             # TEMP 2
             - label:
-                id: value_snd_${uid}
-                align: ${value_snd_alignment | default("bottom_left")}
+                id: value_sensor2_${uid}
+                align: ${value_sensor2_alignment | default("bottom_left")}
                 text_font: ${sensor_font | default(text_font)}
                 text_color: $label_on_color
                 text: "69.9 °C"
-                x: ${value_snd_x | default(0)}
-                y: ${value_snd_y | default(0)}                #y: +25
+                x: ${value_sensor2_x | default(0)}
+                y: ${value_sensor2_y | default(0)}                #y: +25
                 
 
 # ── Subscribe to the HA sensor state ─────────────────────────────────────────
@@ -176,7 +205,7 @@ sensor:
     on_value:
       then:
         - lvgl.label.update:
-            id: value_snd_${uid}
+            id: value_sensor2_${uid}
             text:
               format: "%.1f ${sensor_unit2 | default('°C')}"
               args: [ 'x' ]
