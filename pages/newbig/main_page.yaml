@@ -1,0 +1,350 @@
+# =====================================================================
+#  newbig – Seite "main_page" (Hauptseite)
+#  Eingebunden in newbig.yaml unter packages: (Reihenfolge = Wisch-Reihenfolge).
+#  Pfade sind relativ zu dieser Datei (../../draft/…, ../../esphome-modular-lvgl-buttons/…);
+#  Farben ($grad_*) und ${img_base} kommen aus den substitutions in newbig.yaml.
+# =====================================================================
+
+packages:
+#  ____                  _
+# |  _ \ __ _  __ _  ___/ |
+# | |_) / _` |/ _` |/ _ \ |
+# |  __/ (_| | (_| |  __/ |
+# |_|   \__,_|\__, |\___|_|
+#             |___/
+# 4x8
+# ##PAGE1
+ #Content
+ # ## #
+#### #### #  clock_main: !include
+#### #### #    file: ../../draft/ui/clock/daytime_gradient_clock.yaml
+#### #### #    vars:
+#### #### #      uid: clock_main
+#### #### #      row: 0
+#### #### #      column: 6
+#### #### #      column_span: 2
+#### #### #      page_id: "main_page"
+#### #### #      weekday_names: ["Montag", "Dienstag", "Mittwoch", "Donnerstag",
+#### #### #                      "Freitag", "Samstag", "Sonntag"]
+#### #### #      date_format: "{weekday}, {day}."
+#### #### #      date_font: nunito_24
+#### #### #      time_font: nunito_72
+#### #### #      time_y: 14
+  clock_main: !include
+    file: ../../draft/ui/clock/daytime_gradient_clock.yaml
+    vars:
+      uid: clock_main
+      row: 0
+      column: 6
+      column_span: 2
+      page_id: "main_page"
+      weekday_names: ["Montag", "Dienstag", "Mittwoch", "Donnerstag",
+                      "Freitag", "Samstag", "Sonntag"]
+      date_format: "{weekday}, {day}."
+      date_font: nunito_24
+      time_font: nunito_72
+      time_y: 14
+
+
+
+
+  kamera_eingang: !include
+    file: ../../draft/ui/page/page_camerabutton.yaml
+    vars:
+      uid: kamera_eingang
+      row: 1
+      column: 6
+      column_span: 2
+      row_span: 2
+      text: "Eingang"
+      camera_url: http://192.168.178.27:180/rd/esp32s3camX_256.jpg
+      update_interval: 1s
+      image_width: 256
+      image_height: 192
+      click_page: "cam_page"
+      page_id: "main_page"
+      bg_grad_dir: VER
+      bg_color: $grad_cam_top
+      bg_grad_color: $grad_cam_bottom
+
+
+  temp_display: !include
+    file: ../../draft/ui/sensor/remote_area_triple_remoteimage.yaml
+    vars:
+      uid: temp_display
+      sensor1_entity: "sensor.cyd1_temperatur_2"
+      sensor2_entity: "sensor.cyd1_luftfeuchtigkeit_2"
+      sensor3_entity: "sensor.cyd1_luftdruck_2"
+      row: 0
+      column: 0
+      column_span: 2
+      text: "Display"
+      icon: $mdi_thermometer
+      label_font: "nunito_36"
+      sensor1_font: "nunito_36"
+      sensor2_font: "nunito_24"
+      sensor3_font: "nunito_24"
+      page_id: "main_page"
+      bg_grad_dir: VER
+      bg_color: $grad_klima_top
+      bg_grad_color: $grad_klima_bottom
+      # image_url: "${img_base}/tile_klima_bg.png"
+      # image_format: PNG
+      # image_width: 256
+      # image_height: 150
+
+
+  temp_multi_1_display: !include     # Wohnzimmer & Küche
+    file: ../../draft/ui/sensor/remote_area_double_remoteimage.yaml
+    vars:
+      uid: temp_multi_1_display
+      sensor_entity1: "sensor.sensor_bmp280_3_bmp280_3_temperature_2" # WZ
+      sensor_entity2: "sensor.sensor_bmp280_4_bmp280_4_temperature_2" #Küche
+      sensor_1_icon: $mdi_sofa
+      sensor_2_icon: $mdi_silverware_fork_knife
+      sensor_unit1: "°C"
+      sensor_unit2: "°C"
+      row: 0
+      column: 2
+      column_span: 2
+      text: "EG"
+      icon: $mdi_thermometer
+      sensor_font: "nunito_48"
+      label_font: "nunito_36"
+      value_x: 50
+      value_sensor2_x: 50
+      value_sensor2_y: 25
+      page_id: "main_page"
+      bg_grad_dir: VER
+      bg_color: $grad_klima_top
+      bg_grad_color: $grad_klima_bottom
+      # image_url: "${img_base}/tile_bg_erdgeschoss.png"
+      # image_format: PNG
+      # image_width: 256
+      # image_height: 150
+
+  # Sendspin: Cover + Titel/Interpret/Album (der Sendspin-Hub kommt aus dieser Kachel;
+  # die Textzeilen auf media_page/solar_page hängen sich unten per !extend an).
+  now_playing: !include
+    file: ../../draft/ui/sensor/sendspin.yaml
+    vars:
+      uid: np
+      row: 0
+      column: 4
+      column_span: 2
+      image_width: 100
+      image_height: 100
+      text_max_width: 50%
+      label_font_title: nunito_20
+      label_font_artist: nunito_20
+      label_font_album: nunito_18
+      page_id: "main_page"
+      bg_grad_dir: VER
+      bg_color: $grad_media_top
+      bg_grad_color: $grad_media_bottom
+
+
+  temp_multi_vorne_display: !include     # Vor dem Haus
+    file: ../../draft/ui/sensor/remote_area_double_remoteimage.yaml
+    vars:
+      uid: temp_multi_vorne_display
+      sensor_entity1: "sensor.sensor_bmp280_2_bmp280_2_temperature_2" # Box
+      sensor_entity2: "sensor.sensor_bmp280_2_ext_temperature_2" #Sensor
+      sensor_1_icon: $mdi_cupboard
+      sensor_2_icon: $mdi_thermometer_probe
+      sensor_unit1: "°C"
+      sensor_unit2: "°C"
+      row: 1
+      column: 0
+      column_span: 2
+      text: "Vorne"
+      icon: $mdi_thermometer
+      sensor_font: "nunito_48"
+      label_font: "nunito_36"
+      value_x: 50
+      value_sensor2_x: 50
+      value_sensor2_y: 25      
+      page_id: "main_page"
+      bg_grad_dir: VER
+      bg_color: $grad_klima_top
+      bg_grad_color: $grad_klima_bottom
+      # image_url: "${img_base}/tile_bg_vor_dem_haus.png"
+      # image_format: PNG
+      # image_width: 256
+      # image_height: 150
+      # image_opa: 20%
+
+
+
+  temp_multi_terrasse_display: !include     # Terrasse
+    file: ../../draft/ui/sensor/remote_area_double_remoteimage.yaml
+    vars:
+      uid: temp_multi_terrasse_display
+      sensor_entity1: "sensor.sensor_bmp280_1_bmp280_1_temperature_2" # Box
+      sensor_entity2: "sensor.sensor_bmp280_1_ext_temperature" #Sensor
+      sensor_1_icon: $mdi_flower_pollen_outline
+      sensor_2_icon: $mdi_thermometer_probe
+      sensor_unit1: "°C"
+      sensor_unit2: "°C"
+      row: 1
+      column: 2
+      column_span: 2
+      text: "Terrasse"
+      icon: $mdi_thermometer
+      sensor_font: "nunito_48"
+      label_font: "nunito_36"
+      value_x: 50
+      value_sensor2_x: 50
+      value_sensor2_y: 25      
+      page_id: "main_page"
+      bg_grad_dir: VER
+      bg_color: $grad_klima_top
+      bg_grad_color: $grad_klima_bottom
+      # image_url: "${img_base}/tile_bg_terrasse.png"
+      # image_format: PNG
+      # image_width: 256
+      # image_height: 150
+      # image_opa: 80%
+
+
+
+  temp_soltest: !include             # Netz / Solar / Verbrauch
+    file: ../../draft/ui/sensor/remote_area_triple_remoteimage.yaml
+    vars:
+      uid: temp_soltest
+      sensor1_entity: sensor.stromzahler_momentanwirkleistung
+      sensor2_entity: sensor.hm_power
+      sensor3_entity: sensor.keller_stromzahler_momentaner_gesamtverbrauch
+      sensor1_unit: "W"
+      sensor2_unit: "W"
+      sensor3_unit: "W"
+      row: 2
+      column: 0
+      column_span: 2
+      text: "Strom"
+      icon: $mdi_solar_power
+      page_id: "main_page"
+      bg_grad_dir: VER
+      bg_color: $grad_strom_top
+      bg_grad_color: $grad_strom_bottom
+
+
+
+
+  heating_card: !include
+    file: ../../draft/ui/sensor/remote_quad_rows_remoteimage.yaml
+    vars:
+      uid: heating_card
+      row: 2
+      column: 2
+      column_span: 2
+      page_id: "main_page"
+      row1_entity: "sensor.boiler_dhw_storagetemp2"
+      row1_title: "Vorrat"
+      row1_icon: $mdi_water_boiler
+      row1_unit: "°C"
+      row2_entity: "sensor.boiler_boiltemp"
+      row2_title: "Boiler"
+      row2_icon: $mdi_water_boiler
+      row2_unit: "°C"
+      row3_entity: "sensor.boiler_syspress"
+      row3_title: "Druck"
+      row3_icon: $mdi_gauge
+      row3_unit: "bar"
+      row4_entity: "sensor.boiler_curburnpow"     # > 0 = Brenner an
+      row4_title: "Brenner"
+      row4_mode: binary
+      row4_icon_on: $mdi_fire
+      row4_icon_off: $mdi_fire_off
+      row4_on_text: "AN"
+      row4_off_text: "AUS"
+      row4_on_color: "0xFF8C1A"
+      # 4 Zeilen in 150 px
+      icon_font: mdi_icons_24
+      title_font: nunito_20
+      value_font: nunito_20
+      icon_width: 30
+      pad_all: 8
+      bg_grad_dir: VER
+      bg_color: $grad_heizung_top
+      bg_grad_color: $grad_heizung_bottom
+
+ #Nav (Menü: Grafiken aktiv)
+  page_button_main_media: !include
+    file: ../../draft/ui/page/page_button_remoteimage.yaml
+    vars:
+      uid: page_button_main_media
+      row: 3
+      column: 0
+      column_span: 2
+      text: "Media"
+      icon: $mdi_page_next
+      page_id: "main_page"
+      click_page: "media_page"
+      image_url: "${img_base}/tile_media.png"
+      image_format: PNG
+      image_width: 256
+      image_height: 150
+
+
+  page_button_main_heating: !include
+    file: ../../draft/ui/page/page_button_remoteimage.yaml
+    vars:
+      uid: page_button_main_heating
+      row: 3
+      column: 2
+      column_span: 2
+      text: "Heizung"
+      icon: $mdi_page_next
+      page_id: "main_page"
+      click_page: "heating_page"
+      image_url: "${img_base}/tile_heizung.png"
+      image_format: PNG
+      image_width: 256
+      image_height: 150
+
+
+  page_button_main_solar: !include
+    file: ../../draft/ui/page/page_button_remoteimage.yaml
+    vars:
+      uid: page_button_main_solar
+      row: 3
+      column: 4
+      column_span: 2
+      text: "Strom"
+      icon: $mdi_page_next
+      page_id: "main_page"
+      click_page: "solar_page"
+      image_url: "${img_base}/tile_solar.png"
+      image_format: PNG
+      image_width: 256
+      image_height: 150
+
+
+  page_button_main_cal: !include
+    file: ../../draft/ui/page/page_button_remoteimage.yaml
+    vars:
+      uid: page_button_main_cal
+      row: 3
+      column: 6
+      column_span: 2
+      text: "Kalender"
+      icon: $mdi_page_next
+      page_id: "main_page"
+      click_page: "cal_page"
+      image_url: "${img_base}/tile_kalender.png"
+      image_format: PNG
+      image_width: 256
+      image_height: 150
+
+
+# ── Seitendefinition ──
+lvgl:
+  pages:
+    - id: main_page
+      layout: 4x8
+      styles: page_style
+      bg_color: 0x18213A      # Fallback
+      bg_opa: COVER
+      bg_grad: page_bg_grad
+      <<: !include ../../esphome-modular-lvgl-buttons/common/swipe_navigation.yaml

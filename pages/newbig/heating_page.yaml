@@ -1,0 +1,448 @@
+# =====================================================================
+#  newbig – Seite "heating_page" (Heizung)
+#  Eingebunden in newbig.yaml unter packages: (Reihenfolge = Wisch-Reihenfolge).
+#  Pfade sind relativ zu dieser Datei (../../draft/…, ../../esphome-modular-lvgl-buttons/…);
+#  Farben ($grad_*) und ${img_base} kommen aus den substitutions in newbig.yaml.
+# =====================================================================
+
+packages:
+#  ____                  _____      _                _   _
+# |  _ \ __ _  __ _  ___|___ /     | |__   ___  __ _| |_(_)_ __   __ _
+# | |_) / _` |/ _` |/ _ \ |_ \     | '_ \ / _ \/ _` | __| | '_ \ / _` |
+# |  __/ (_| | (_| |  __/___) |    | | | |  __/ (_| | |_| | | | | (_| |
+# |_|   \__,_|\__, |\___|____/     |_| |_|\___|\__,_|\__|_|_| |_|\__, |
+#             |___/                                              |___/
+
+# ##PAGE3
+ #PageContent
+  clock_heating: !include
+    file: ../../draft/ui/clock/daytime_gradient_clock.yaml
+    vars:
+      uid: clock_heating
+      row: 0
+      column: 6
+      column_span: 2
+      page_id: "heating_page"
+      weekday_names: ["Montag", "Dienstag", "Mittwoch", "Donnerstag",
+                      "Freitag", "Samstag", "Sonntag"]
+      date_format: "{weekday}, {day}."
+      date_font: nunito_24
+      time_font: nunito_72
+      time_y: 14
+
+
+  img_heating_mode_btn: !include
+    file: ../../draft/ui/sensor/remote_text_imageswitch_remoteimages.yaml
+    vars:
+      uid: img_heating_mode
+      entity_id: "select.thermostat_hc1_mode"
+      row: 0
+      column: 0
+      text: "Modus"
+      sensor_font: "nunito_24"
+      page_id: "heating_page"
+      bg_grad_dir: VER
+      bg_color: $grad_heizung_top
+      bg_grad_color: $grad_heizung_bottom
+      image_format: PNG
+      image_width: 128
+      image_height: 150
+      state_1: "auto"
+      state_1_label: "Auto"
+      state_1_bg_color: $grad_klima_top
+      state_1_bg_grad_color: $grad_klima_bottom
+      state_1_image_url: "${img_base}/heizung_automatisch.png"
+      state_2: "day"
+      state_2_label: "Manuell"
+      state_2_bg_color: $grad_heizung_top
+      state_2_bg_grad_color: $grad_heizung_bottom
+      state_2_image_url: "${img_base}/heizung_manuell.png"
+      state_3: "night"
+      state_3_label: "Manuell"
+      state_3_bg_color: $grad_heizung_top
+      state_3_bg_grad_color: $grad_heizung_bottom
+      state_3_image_url: "${img_base}/heizung_manuell.png"
+
+
+  img_heating_daypart_btn: !include
+    file: ../../draft/ui/sensor/remote_text_imageswitch_remoteimages.yaml
+    vars:
+      uid: img_heating_daypart
+      entity_id: "sensor.thermostat_hc1_modetype"
+      row: 0
+      column: 1
+      text: "Betrieb"
+      sensor_font: "nunito_24"
+      page_id: "heating_page"
+      bg_grad_dir: VER
+      bg_color: $grad_heizung_top
+      bg_grad_color: $grad_heizung_bottom
+      image_format: PNG
+      image_width: 128
+      image_height: 150
+      state_1: "day"
+      state_1_label: "Tag"
+      state_1_bg_color: $grad_tag_top
+      state_1_bg_grad_color: $grad_tag_bottom
+      state_1_image_url: "${img_base}/heizung_tag_128_150.png"
+      state_2: "night"
+      state_2_label: "Nacht"
+      state_2_bg_color: $grad_nacht_top
+      state_2_bg_grad_color: $grad_nacht_bottom
+      state_2_image_url: "${img_base}/heizung_nacht_128_150.png"
+
+
+  img_heating_saison_btn: !include
+    file: ../../draft/ui/sensor/remote_text_imageswitch_remoteimages.yaml
+    vars:
+      uid: img_heating_saison
+      entity_id: "sensor.thermostat_hc1_summermode"
+      row: 0
+      column: 2
+      text: "Saison"
+      sensor_font: "nunito_24"
+      page_id: "heating_page"
+      bg_grad_dir: VER
+      bg_color: $grad_winter_top          # alles außer "summer" = Winter (wie bisher)
+      bg_grad_color: $grad_winter_bottom
+      image_url: "${img_base}/heizung_winter_128_150.png"
+      image_format: PNG
+      image_width: 128
+      image_height: 150
+      state_1: "summer"
+      state_1_label: "Sommer"
+      state_1_bg_color: $grad_tag_top
+      state_1_bg_grad_color: $grad_tag_bottom
+      state_1_image_url: "${img_base}/heizung_sommer_128_150.png"
+      state_2: "winter"
+      state_2_label: "Winter"
+
+  # Remote — Home Assistant sensor entity
+  outdoor_temp_heating_btn: !include
+    file: ../../draft/ui/sensor/remote_remoteimage.yaml
+    vars:
+      uid: outdoor_temp_heating_btn
+      entity_id: "sensor.boiler_outdoortemp"
+      row: 0
+      column: 4
+      column_span: 2
+      text: "Aussen"
+      icon: $mdi_thermometer
+      unit: "°C"
+      precision: 1
+      page_id: "heating_page"
+      sensor_font: "nunito_48"
+      label_font: "nunito_36"
+      bg_grad_dir: VER
+      bg_color: $grad_klima_top
+      bg_grad_color: $grad_klima_bottom
+      image_url: "${img_base}/temp_aussen.png"
+      image_format: PNG
+      image_width: 256
+      image_height: 150
+
+  #binary_sensor.boiler_burngas burner
+
+  img_heating_burner_btn: !include
+    file: ../../draft/ui/sensor/remote_text_imageswitch_remoteimages.yaml
+    vars:
+      uid: img_heating_burner
+      entity_id: "binary_sensor.boiler_burngas"
+      row: 1
+      column: 0
+      text: "Brenner"
+      icon: $mdi_fire
+      sensor_font: "nunito_24"
+      page_id: "heating_page"
+      image_format: PNG
+      image_width: 128
+      image_height: 150
+      state_1: "on"
+      state_1_label: "An"
+      state_1_bg_color: $grad_feuer_top
+      state_1_bg_grad_color: $grad_feuer_bottom
+      state_1_image_url: "${img_base}/heizung_brenner_an_128_150.png"
+      state_2: "off"
+      state_2_label: "Aus"
+      state_2_image_url: "${img_base}/heizung_brenner_aus_128_150.png"
+
+  img_heating_active_btn: !include
+    file: ../../draft/ui/sensor/remote_text_imageswitch_remoteimages.yaml
+    vars:
+      uid: img_heating_active
+      entity_id: "binary_sensor.boiler_heatingactive"
+      row: 1
+      column: 1
+      text: "Heizkreis"
+      sensor_font: "nunito_24"
+      page_id: "heating_page"
+      image_format: PNG
+      image_width: 128
+      image_height: 150
+      state_1: "on"
+      state_1_label: "Aktiv"
+      state_1_bg_color: $grad_heizung_top
+      state_1_bg_grad_color: $grad_heizung_bottom
+      state_1_image_url: "${img_base}/heizkreis_aktiv.png"
+      state_2: "off"
+      state_2_label: "Inaktiv"
+      state_2_image_url: "${img_base}/heizkreis_inaktiv.png"
+
+
+
+  temp_heating_vorlauf_btn: !include
+    file: ../../draft/ui/sensor/remote_remoteimage.yaml
+    vars:
+      uid: temp_heating_vorlauf
+      entity_id: "sensor.boiler_curflowtemp"
+      row: 1
+      column: 2
+      column_span: 2
+      page_id: "heating_page"
+      text: "Vorlauf"
+      icon: $mdi_thermometer
+      value_alignment: bottom_right
+      unit: "°C"
+      precision: 1
+      sensor_font: "nunito_36"
+      bg_grad_dir: VER
+      bg_color: $grad_heizung_top
+      bg_grad_color: $grad_heizung_bottom
+      image_url: "${img_base}/temp_heizung_zulauf.png"
+      image_format: PNG
+      image_width: 256
+      image_height: 150
+      label_alignment: right_mid
+      icon_alignment: bottom_mid
+
+
+  temp_heating_ruecklauf_btn: !include
+    file: ../../draft/ui/sensor/remote_remoteimage.yaml
+    vars:
+      uid: temp_heating_ruecklauf
+      entity_id: "sensor.boiler_rettemp"
+      row: 1
+      column: 4
+      column_span: 2
+      page_id: "heating_page"
+      text: "Rücklauf"
+      icon: $mdi_thermometer
+      value_alignment: bottom_right
+      unit: "°C"
+      precision: 1
+      sensor_font: "nunito_36"
+      bg_grad_dir: VER
+      bg_color: $grad_heizung_top
+      bg_grad_color: $grad_heizung_bottom
+      image_url: "${img_base}/temp_heizung_ruecklauf.png"
+      image_format: PNG
+      image_width: 256
+      image_height: 150
+      label_alignment: right_mid
+      icon_alignment: bottom_mid
+
+
+  # Party-Modus: Stunden mit − / + setzen (number.set_value)
+  heating_party: !include
+    file: ../../draft/ui/sensor/remote_number_stepper_remoteimage.yaml
+    vars:
+      uid: heating_party
+      entity_id: "number.thermostat_hc1_party"
+      text: "Party"
+      min_value: 0
+      max_value: 48
+      step: 1
+      unit: "h"
+      row: 1
+      column: 6
+      column_span: 2
+      sensor_font: "nunito_48"
+      label_font: "nunito_36"
+      page_id: "heating_page"
+      bg_grad_dir: VER
+      bg_color: $grad_feuer_top
+      bg_grad_color: $grad_feuer_bottom
+      # Keine passende Grafik unter images/ – bei Bedarf hier eintragen:
+      # image_url: "${img_base}/heizung_party.png"
+      # image_format: PNG
+      # image_width: 256
+      # image_height: 150
+
+
+
+  #binary_sensor.boiler_tapwateractive
+  #binary_sensor.boiler_heatingactive
+
+  press_heating_sys_btn: !include
+    file: ../../draft/ui/sensor/remote_remoteimage.yaml
+    vars:
+      uid: press_heating_sys
+      entity_id: "sensor.boiler_syspress"
+      row: 2
+      column: 0
+      page_id: "heating_page"
+      text: "Druck"
+      icon: $mdi_gauge
+    #  value_alignment: bottom_right
+      unit: "bar"
+      precision: 1
+      sensor_font: "nunito_36"
+      bg_grad_dir: VER
+      bg_color: $grad_heizung_top
+      bg_grad_color: $grad_heizung_bottom
+      image_url: "${img_base}/heizung_systemdruck_wert.png"
+      image_format: PNG
+      image_width: 128
+      image_height: 150
+      value_alignment: center
+
+  img_tapwater_active_btn: !include
+    file: ../../draft/ui/sensor/remote_text_imageswitch_remoteimages.yaml
+    vars:
+      uid: img_tapwater_active
+      entity_id: "binary_sensor.boiler_tapwateractive"
+      row: 2
+      column: 1
+      text: "Warmwasser"
+      sensor_font: "nunito_24"
+      page_id: "heating_page"
+      image_format: PNG
+      image_width: 128
+      image_height: 150
+      state_1: "on"
+      state_1_label: "Aktiv"
+      state_1_bg_color: $grad_wasser_top
+      state_1_bg_grad_color: $grad_wasser_bottom
+      state_1_image_url: "${img_base}/heisswasser_aktiv.png"
+      state_2: "off"
+      state_2_label: "Inaktiv"
+      state_2_image_url: "${img_base}/heisswasser_inaktiv.png"
+
+  temp_heating_wasser_btn: !include
+    file: ../../draft/ui/sensor/remote_remoteimage.yaml
+    vars:
+      uid: temp_wasser_heating
+      entity_id: "sensor.boiler_dhw_storagetemp2"
+      row: 2
+      column: 2
+      column_span: 2
+      page_id: "heating_page"
+      text: "Wasservorrat"
+      icon: $mdi_water_boiler
+      value_alignment: bottom_right
+      unit: "°C"
+      precision: 1
+      sensor_font: "nunito_36"
+      bg_grad_dir: VER
+      bg_color: $grad_wasser_top
+      bg_grad_color: $grad_wasser_bottom
+      image_url: "${img_base}/temp_wasservorrat.png"
+      image_format: PNG
+      image_width: 256
+      image_height: 150
+      label_alignment: right_mid
+      icon_alignment: bottom_mid
+
+
+  temp_heating_boiler_btn: !include
+    file: ../../draft/ui/sensor/remote_remoteimage.yaml
+    vars:
+      uid: temp_boiler_heating
+      entity_id: "sensor.boiler_boiltemp"
+      row: 2
+      column: 4
+      column_span: 2
+      page_id: "heating_page"
+      text: "Boiler"
+      icon: $mdi_water_boiler
+      value_alignment: bottom_right
+      unit: "°C"
+      precision: 1
+      sensor_font: "nunito_36"
+      bg_grad_dir: VER
+      bg_color: $grad_heizung_top
+      bg_grad_color: $grad_heizung_bottom
+      image_url: "${img_base}/temp_boiler.png"
+      image_format: PNG
+      image_width: 256
+      image_height: 150
+      label_alignment: right_mid
+      icon_alignment: bottom_mid
+ #NAV (Menü: Grafiken aktiv)
+  page_button_heating_main: !include
+    file: ../../draft/ui/page/page_button_remoteimage.yaml
+    vars:
+      uid: page_button_heating_main
+      row: 3
+      column: 0
+      column_span: 2
+      text: ""
+      icon: $mdi_home
+      page_id: "heating_page"
+      click_page: "main_page"
+      image_url: "${img_base}/tile_home.png"
+      image_format: PNG
+      image_width: 256
+      image_height: 150
+
+  page_button_heating_media: !include
+    file: ../../draft/ui/page/page_button_remoteimage.yaml
+    vars:
+      uid: page_button_heating_media
+      row: 3
+      column: 2
+      column_span: 2
+      text: "Media"
+      icon: $mdi_page_next
+      page_id: "heating_page"
+      click_page: "media_page"
+      image_url: "${img_base}/tile_media.png"
+      image_format: PNG
+      image_width: 256
+      image_height: 150
+
+
+  page_button_heating_solar: !include
+    file: ../../draft/ui/page/page_button_remoteimage.yaml
+    vars:
+      uid: page_button_heating_solar
+      row: 3
+      column: 4
+      column_span: 2
+      text: "Strom"
+      icon: $mdi_page_next
+      page_id: "heating_page"
+      click_page: "solar_page"
+      image_url: "${img_base}/tile_solar.png"
+      image_format: PNG
+      image_width: 256
+      image_height: 150
+
+
+  page_button_heating_cal: !include
+    file: ../../draft/ui/page/page_button_remoteimage.yaml
+    vars:
+      uid: page_button_heating_cal
+      row: 3
+      column: 6
+      column_span: 2
+      text: "Kalender"
+      icon: $mdi_page_next
+      page_id: "heating_page"
+      click_page: "cal_page"
+      image_url: "${img_base}/tile_kalender.png"
+      image_format: PNG
+      image_width: 256
+      image_height: 150
+
+
+# ── Seitendefinition ──
+lvgl:
+  pages:
+    - id: heating_page
+      layout: 4x8
+      styles: page_style
+      bg_color: 0x18213A      # Fallback
+      bg_opa: COVER
+      bg_grad: page_bg_grad
+      <<: !include ../../esphome-modular-lvgl-buttons/common/swipe_navigation.yaml      

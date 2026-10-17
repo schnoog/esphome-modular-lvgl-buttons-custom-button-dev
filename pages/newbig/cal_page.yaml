@@ -1,0 +1,51 @@
+# =====================================================================
+#  newbig – Seite "cal_page" (Kalender)
+#  Eingebunden in newbig.yaml unter packages: (Reihenfolge = Wisch-Reihenfolge).
+#  Pfade sind relativ zu dieser Datei (../../draft/…, ../../esphome-modular-lvgl-buttons/…);
+#  Farben ($grad_*) und ${img_base} kommen aus den substitutions in newbig.yaml.
+# =====================================================================
+
+packages:
+#  ____                  ____                 _
+# |  _ \ __ _  __ _  ___| ___|       ___ __ _| |
+# | |_) / _` |/ _` |/ _ \___ \      / __/ _` | |
+# |  __/ (_| | (_| |  __/___) |    | (_| (_| | |
+# |_|   \__,_|\__, |\___|____/      \___\__,_|_|
+#             |___/
+
+# ##PAGE5
+ #PageContent
+
+
+
+  mycalendar: !include
+    file: ../../draft/ui/calendar/calendar_backend.yaml
+    vars:
+      cal_sensor: sensor.display_kalender
+      month_names: ["Januar", "Februar", "März", "April", "Mai", "Juni",
+                    "Juli", "August", "September", "Oktober", "November", "Dezember"]
+      day_format: "{day}. {month}"
+      today_format: "Heute, {day}. {month}"
+      text_events: "Termine"
+      text_all_day: "ganztags"
+      text_no_events: "Keine Termine"
+
+
+# ── Seitendefinition ──
+lvgl:
+  pages:
+    - id: cal_page
+      styles: page_style
+      bg_color: 0x18213A      # Fallback
+      bg_opa: COVER
+      bg_grad: page_bg_grad
+      <<: !include ../../esphome-modular-lvgl-buttons/common/swipe_navigation.yaml      
+      widgets:
+        - !include
+          file: ../../draft/ui/calendar/calendar_widget.yaml
+          vars:
+            weekday_names: ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+            title_placeholder: "Kalender"
+            events_placeholder: "Termine"
+            home_page: main_page
+            home_label: "Start"

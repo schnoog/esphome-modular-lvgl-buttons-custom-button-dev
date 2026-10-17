@@ -1,0 +1,94 @@
+# =====================================================================
+#  newbig – Seite "cam_page" (Kamera)
+#  Eingebunden in newbig.yaml unter packages: (Reihenfolge = Wisch-Reihenfolge).
+#  Pfade sind relativ zu dieser Datei (../../draft/…, ../../esphome-modular-lvgl-buttons/…);
+#  Farben ($grad_*) und ${img_base} kommen aus den substitutions in newbig.yaml.
+# =====================================================================
+
+packages:
+#                          __
+#  _ __   __ _  __ _  ___ / /_     ___ __ _ _ __ ___
+# | '_ \ / _` |/ _` |/ _ \ '_ \   / __/ _` | '_ ` _ \
+# | |_) | (_| | (_| |  __/ (_) | | (_| (_| | | | | | |
+# | .__/ \__,_|\__, |\___|\___/   \___\__,_|_| |_| |_|
+# |_|          |___/
+
+# ##PAGE
+
+  page_button_camshow: !include
+    file: ../../draft/ui/page/page_button_remoteimage.yaml
+    vars:
+      uid: page_button_camshow
+      row: 0
+      column: 0
+      text: ""
+      icon: ""
+      page_id: "cam_page"
+      click_page: "cam_page"
+      image_url: "${img_base}/kamera.png"
+      image_format: PNG
+      image_width: 128
+      image_height: 150
+
+  page_button_cam_main: !include
+    file: ../../draft/ui/page/page_button_remoteimage.yaml
+    vars:
+      uid: page_button_cam_main
+      row: 3
+      column: 0
+      column_span: 1
+      text: ""
+      icon: $mdi_home
+      page_id: "cam_page"
+      click_page: "main_page"
+      image_url: "${img_base}/tile_home.png"
+      image_format: PNG
+      image_width: 128
+      image_height: 150
+
+
+  cam_page_camview: !include
+    file: ../../draft/ui/page/page_camerabutton.yaml
+    vars:
+      uid: cam_page_camview
+      row: 0
+      column: 1
+      column_span: 5
+      row_span: 4
+  #    camera_url: http://192.168.178.119:8123/local/ramdisk/esp32s3cam.jpg
+  #    camera_url: http://192.168.178.124:8081/
+      camera_url: http://192.168.178.27:180/rd/esp32s3camX.jpg
+      update_interval: 1s
+      image_width: 800
+      image_height: 600
+      text: ""
+      click_page: "cam_page"
+      page_id: "cam_page"
+      bg_grad_dir: VER
+      bg_color: $grad_cam_top
+      bg_grad_color: $grad_cam_bottom
+
+
+
+#  page_button_main: !include
+#    file: ../../esphome-modular-lvgl-buttons/ui/page/page_button.yaml
+#    vars:
+#      uid: page_button_main
+#      row: 3
+#      column: 8
+#      text: "Hauptseite"
+#      icon: $mdi_page_previous
+#      page_id: "second_page"
+#      click_page: "main_page"
+
+
+# ── Seitendefinition ──
+lvgl:
+  pages:
+    - id: cam_page
+      layout: 4x6 
+      styles: page_style
+      bg_color: 0x18213A      # Fallback
+      bg_opa: COVER
+      bg_grad: page_bg_grad
+      <<: !include ../../esphome-modular-lvgl-buttons/common/swipe_navigation.yaml      
