@@ -72,7 +72,7 @@ sendspin:
 
 text_sensor:
   - platform: sendspin
-    name: senspin_title
+    name: ${uid}_senspin_title
     id: ${uid}_sendspin_title
     type: title
     on_value:
@@ -87,7 +87,7 @@ text_sensor:
 
   - platform: sendspin
     id: ${uid}_sendspin_artist
-    name: sendspin_artist
+    name: ${uid}_sendspin_artist
     type: artist
     on_value:
       - logger.log:
@@ -101,7 +101,7 @@ text_sensor:
   - platform: sendspin
     id: ${uid}_sendspin_album
     type: album
-    name: sendspin_album
+    name: ${uid}_sendspin_album
     on_value:
       - logger.log:
           format: "Album: %s"

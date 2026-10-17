@@ -1,0 +1,277 @@
+# Remote number stepper tile — shows the value of a Home Assistant number
+# entity (e.g. "number.thermostat_hc1_party") and sets it with − / + buttons
+# via number.set_value. Background: plain colour or gradient, optionally with
+# a remote image (online_image) on top; label, value and buttons above it.
+#
+# vars:
+#   uid:                    unique identifier
+#   entity_id:              HA number entity, e.g. "number.thermostat_hc1_party"
+#   row:                    grid row
+#   column:                 grid column
+#   row_span:               (default: 1)
+#   column_span:            (default: 2)
+#   page_id:                parent page                             (default: main_page)
+#   text:                   label shown top left                    (default: "")
+#   icon:                   icon glyph shown top right              (default: "")
+#
+#   -- value --
+#   min_value:              lowest value                            (default: 0)
+#   max_value:              highest value                           (default: 100)
+#   step:                   change per tap                          (default: 1)
+#   precision:              decimals                                (default: 0)
+#   unit:                   unit after the value, e.g. "h"          (default: "")
+#
+#   -- look --
+#   label_font:             (default: text_font)     label_alignment: (default: top_left)
+#   sensor_font:            (default: text_font)     value_alignment: (default: center)
+#   button_font:            font of "−" / "+"         (default: montserrat_28)
+#   button_size:            width/height of the buttons in px       (default: 56)
+#   button_color:           button background                       (default: 0x000000)
+#   button_opa:             button background opacity               (default: 35%)
+#   label_x, label_y:       (default: 0, 0)          value_x, value_y: (default: 0, 0)
+#   icon_x, icon_y:         (default: 0, 0)
+#
+#   -- background: plain colour or gradient; a background image, if any, is drawn on top --
+#   bg_color:               main colour                             (default: $button_off_color)
+#   bg_opa:                 0%-100% or TRANSP/COVER                 (default: COVER)
+#   bg_grad_dir:            NONE | VER | HOR                        (default: NONE = plain colour)
+#   bg_grad_color:          second gradient colour                  (default: bg_color)
+#   bg_main_stop:           0..255 where bg_color starts to fade    (default: 0)
+#   bg_grad_stop:           0..255 where bg_grad_color is reached   (default: 255)
+#
+#   image_url:              image URL (optional; if not set, no image is loaded)
+#   image_format:           image format                            (default: AUTO)
+#   image_width:            image width in px                       (default: 256)
+#   image_height:           image height in px                      (default: 150)
+#   image_update_interval:  re-download interval, e.g. "30min"      (default: never)
+#   image_alignment:        image alignment inside the tile         (default: center)
+#   image_x, image_y:       image offset                            (default: 0, 0)
+#   image_opa:              image opacity. 0%-100% or TRANSP/COVER  (default: COVER)
+#
+# requires:
+#   $icon_font, $label_on_color, $label_off_color, $button_off_color, text_font
+#   (theme), network connection, HA API connection.
+#   "Allow the device to perform Home Assistant actions" must be enabled in
+#   the HA ESPHome integration options, otherwise the buttons do nothing.
+#
+# notes:
+#   - A tap updates the shown value immediately (so several quick taps add
+#     up) and sends number.set_value; the next state from HA overwrites it.
+#   - The value is clamped to min_value..max_value; "--" until the first
+#     state arrives or while the entity is unavailable.
+#   - Image download is attempted every 16 s until it succeeds; the image
+#     stays hidden until then. RAM: width x height x 3 bytes.
+#
+# example (heating party mode in hours):
+#   heating_party: !include
+#     file: draft/ui/sensor/remote_number_stepper_remoteimage.yaml
+#     vars:
+#       uid: heating_party
+#       entity_id: "number.thermostat_hc1_party"
+#       text: "Party"
+#       max_value: 48
+#       unit: "h"
+#       row: 1
+#       column: 6
+
+
+globals:
+- id: ${uid}_value                # last known / optimistic value, NAN = unknown
+  type: float
+  initial_value: 'NAN'
+- id: ${uid}_img_state            # 0 = pending, 1 = downloading, 2 = loaded
+  type: uint8_t
+  initial_value: '0'
+
+
+http_request:
+
+image:
+- platform: online_image
+  id: ${uid}_bg_image
+  url: '${image_url | default("http://localhost/no_image.png")}'
+  format: ${image_format | default("AUTO")}
+  type: RGB565
+  transparency: alpha_channel
+  resize: ${image_width | default(256)}x${image_height | default(150)}
+  update_interval: ${image_update_interval | default("never")}
+  on_download_finished:
+  - lambda: id(${uid}_img_state) = 2;
+  - lvgl.image.update:
+      id: img_${uid}
+      src: ${uid}_bg_image
+  - lvgl.widget.show: img_${uid}
+  on_error:
+  - lambda: id(${uid}_img_state) = 0;   # retry on next interval tick
+
+# ── Initial download once the network is up (works with WiFi and Ethernet) ──
+interval:
+- interval: 16s
+  then:
+  - if:
+      condition:
+        lambda: |-
+          return ${ 'true' if (image_url | default('')) != '' else 'false' } &&
+                 id(${uid}_img_state) == 0 &&
+                 network::is_connected();
+      then:
+      - lambda: id(${uid}_img_state) = 1;
+      - component.update: ${uid}_bg_image
+
+
+script:
+  # Shows the value (or "--") in the value label
+  - id: ${uid}_show_value
+    mode: queued
+    then:
+      - lvgl.label.update:
+          id: value_${uid}
+          text: !lambda |-
+            const float v = id(${uid}_value);
+            if (std::isnan(v)) return std::string("--");
+            char buf[32];
+            snprintf(buf, sizeof(buf), "%.*f", ${precision | default(0)}, v);
+            std::string s(buf);
+            const char *unit = "${unit | default('')}";
+            if (*unit) { s += ' '; s += unit; }
+            return s;
+
+  # Changes the value by `delta`, clamps it and sends it to HA
+  - id: ${uid}_step
+    mode: queued
+    parameters:
+      delta: float
+    then:
+      - if:
+          condition:
+            lambda: return !std::isnan(id(${uid}_value));
+          then:
+            - lambda: |-
+                float v = id(${uid}_value) + delta;
+                if (v < ${min_value | default(0)}) v = ${min_value | default(0)};
+                if (v > ${max_value | default(100)}) v = ${max_value | default(100)};
+                id(${uid}_value) = v;
+            - script.execute: ${uid}_show_value
+            - homeassistant.action:
+                action: number.set_value
+                data:
+                  entity_id: ${entity_id}
+                  value: !lambda |-
+                    char buf[32];
+                    snprintf(buf, sizeof(buf), "%.*f", ${precision | default(0)}, id(${uid}_value));
+                    return std::string(buf);
+
+
+lvgl:
+  pages:
+  - id: !extend ${page_id | default("main_page")}
+    widgets:
+    - container:
+        id: ${uid}_tile
+        grid_cell_row_pos: ${row}
+        grid_cell_column_pos: ${column}
+        grid_cell_row_span: ${row_span | default(1)}
+        grid_cell_column_span: ${column_span | default(2)}
+        grid_cell_x_align: stretch
+        grid_cell_y_align: stretch
+        widgets:
+        - button:
+            id: button_${uid}
+            clickable: false
+            clip_corner: true
+            bg_opa: ${bg_opa | default("COVER")}
+            bg_color: ${bg_color | default(button_off_color)}
+            bg_grad_color: ${bg_grad_color | default(bg_color | default(button_off_color))}
+            bg_grad_dir: ${bg_grad_dir | default("NONE")}
+            bg_main_stop: ${bg_main_stop | default(0)}
+            bg_grad_stop: ${bg_grad_stop | default(255)}
+            widgets:
+            - image:
+                id: img_${uid}
+                src: ${uid}_bg_image
+                align: ${image_alignment | default("center")}
+                opa: ${image_opa | default("COVER")}
+                hidden: true             # shown after successful download
+                x: ${image_x | default(0)}
+                y: ${image_y | default(0)}
+            - label:
+                id: label_${uid}
+                align: ${label_alignment | default("top_left")}
+                x: ${label_x | default(0)}
+                y: ${label_y | default(0)}
+                text_font: ${label_font | default(text_font)}
+                text_color: $label_off_color
+                text: "${text | default('')}"
+            - label:
+                id: icon_${uid}
+                align: top_right
+                x: ${icon_x | default(0)}
+                y: ${icon_y | default(0)}
+                text_font: $icon_font
+                text_color: $label_off_color
+                text: "${icon | default('')}"
+            - label:
+                id: value_${uid}
+                align: ${value_alignment | default("center")}
+                x: ${value_x | default(0)}
+                y: ${value_y | default(0)}
+                text_font: ${sensor_font | default(text_font)}
+                text_color: $label_on_color
+                text: "--"
+            # − / + buttons
+            - button:
+                id: minus_${uid}
+                align: bottom_left
+                width: ${button_size | default(56)}
+                height: ${button_size | default(56)}
+                radius: ${(button_size | default(56)) // 2}
+                pad_all: 0
+                bg_color: ${button_color | default("0x000000")}
+                bg_opa: ${button_opa | default("35%")}
+                bg_grad_dir: NONE
+                pressed:
+                  bg_opa: 70%
+                widgets:
+                - label:
+                    align: center
+                    text_font: ${button_font | default("montserrat_28")}
+                    text_color: $label_on_color
+                    text: ""         # LV_SYMBOL_MINUS
+                on_click:
+                  - script.execute:
+                      id: ${uid}_step
+                      delta: !lambda return -(${step | default(1)});
+            - button:
+                id: plus_${uid}
+                align: bottom_right
+                width: ${button_size | default(56)}
+                height: ${button_size | default(56)}
+                radius: ${(button_size | default(56)) // 2}
+                pad_all: 0
+                bg_color: ${button_color | default("0x000000")}
+                bg_opa: ${button_opa | default("35%")}
+                bg_grad_dir: NONE
+                pressed:
+                  bg_opa: 70%
+                widgets:
+                - label:
+                    align: center
+                    text_font: ${button_font | default("montserrat_28")}
+                    text_color: $label_on_color
+                    text: ""         # LV_SYMBOL_PLUS
+                on_click:
+                  - script.execute:
+                      id: ${uid}_step
+                      delta: !lambda return ${step | default(1)};
+
+
+# ── Subscribe to the HA number state ─────────────────────────────────────────
+sensor:
+  - platform: homeassistant
+    id: ${uid}_state
+    entity_id: ${entity_id}
+    internal: true
+    on_value:
+      then:
+        - lambda: id(${uid}_value) = x;
+        - script.execute: ${uid}_show_value
