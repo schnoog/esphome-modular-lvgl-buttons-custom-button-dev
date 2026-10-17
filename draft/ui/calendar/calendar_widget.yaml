@@ -1,7 +1,7 @@
 # =====================================================================
 #  Kalender-Widget (buttonmatrix) – füllt seinen Eltern-Container komplett
 #
-#  Einbindung als eigene Seite:
+#  Einbindung als eigene Seite (Default: Englisch, Home -> main_page):
 #
 #    - id: cal_page
 #      styles: page_style
@@ -14,14 +14,34 @@
 #      widgets:
 #        - !include ui/calendar/calendar_widget.yaml
 #
+#  Andere Sprache / anderes Home-Ziel per vars (alle optional):
+#
+#        - !include
+#          file: ui/calendar/calendar_widget.yaml
+#          vars:
+#            weekday_names: ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]  # ab Montag
+#            title_placeholder: "Kalender"   # bis die ersten Daten aus HA da sind
+#            events_placeholder: "Termine"
+#            home_page: main_page            # Ziel-Seite des Home-Buttons
+#            home_label: "Start"             # Text neben dem Haus-Symbol
+#
+#  Monatsnamen und Texte der Terminliste kommen aus calendar_backend.yaml.
+#
 #  Voraussetzung für die Monats-Buttons: In HA unter
 #  Einstellungen > Geräte > ESPHome > (Gerät) > Optionen
 #  "Gerät darf Home Assistant-Aktionen ausführen" aktivieren.
 #
-#  Fonts: Montserrat-Builtins haben keine Umlaute. Für "März" und
-#  Terminnamen einen eigenen Font mit glyphsets (z.B. GF_Latin_Core)
+#  Fonts: Montserrat-Builtins haben keine Umlaute. Für Umlaute in
+#  Monats-/Tagesnamen (z.B. "März") und Terminnamen einen eigenen Font mit glyphsets (z.B. GF_Latin_Core)
 #  verwenden und unten eintragen.
 # =====================================================================
+defaults:
+  weekday_names: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
+  title_placeholder: "Calendar"
+  events_placeholder: "Events"
+  home_page: main_page
+  home_label: "Home"
+
 obj:
   id: cal_container
   width: 100%
@@ -49,7 +69,7 @@ obj:
           flex_flow: COLUMN
           pad_row: 6
         widgets:
-          # Kopfzeile:  <   Oktober 2026   >
+          # Kopfzeile:  <   October 2026   >
           - obj:
               width: 100%
               height: SIZE_CONTENT
@@ -85,7 +105,7 @@ obj:
                 - label:
                     id: cal_title_label
                     flex_grow: 1
-                    text: "Kalender"
+                    text: "${title_placeholder}"
                     text_font: montserrat_28
                     text_color: 0xFFFFFF
                     text_align: CENTER
@@ -130,13 +150,13 @@ obj:
                 flex_flow: ROW
                 pad_column: 4
               widgets:
-                - label: { text: "Mo", flex_grow: 1, text_align: CENTER, text_color: 0x8E8E93 }
-                - label: { text: "Di", flex_grow: 1, text_align: CENTER, text_color: 0x8E8E93 }
-                - label: { text: "Mi", flex_grow: 1, text_align: CENTER, text_color: 0x8E8E93 }
-                - label: { text: "Do", flex_grow: 1, text_align: CENTER, text_color: 0x8E8E93 }
-                - label: { text: "Fr", flex_grow: 1, text_align: CENTER, text_color: 0x8E8E93 }
-                - label: { text: "Sa", flex_grow: 1, text_align: CENTER, text_color: 0x8E8E93 }
-                - label: { text: "So", flex_grow: 1, text_align: CENTER, text_color: 0x8E8E93 }
+                - label: { text: "${weekday_names[0]}", flex_grow: 1, text_align: CENTER, text_color: 0x8E8E93 }
+                - label: { text: "${weekday_names[1]}", flex_grow: 1, text_align: CENTER, text_color: 0x8E8E93 }
+                - label: { text: "${weekday_names[2]}", flex_grow: 1, text_align: CENTER, text_color: 0x8E8E93 }
+                - label: { text: "${weekday_names[3]}", flex_grow: 1, text_align: CENTER, text_color: 0x8E8E93 }
+                - label: { text: "${weekday_names[4]}", flex_grow: 1, text_align: CENTER, text_color: 0x8E8E93 }
+                - label: { text: "${weekday_names[5]}", flex_grow: 1, text_align: CENTER, text_color: 0x8E8E93 }
+                - label: { text: "${weekday_names[6]}", flex_grow: 1, text_align: CENTER, text_color: 0x8E8E93 }
 
           # Das eigentliche Raster – die Map wird von script cal_render ersetzt
           - buttonmatrix:
@@ -193,7 +213,7 @@ obj:
         widgets:
           - label:
               id: cal_day_header
-              text: "Termine"
+              text: "${events_placeholder}"
               text_font: montserrat_24
               text_color: 0xFFB300
 
@@ -238,8 +258,8 @@ obj:
                     shadow_width: 0
                     text_color: 0xFFFFFF
                     text_font: montserrat_20
-                    text: "\uF015  Start"     # LV_SYMBOL_HOME
+                    text: "\uF015  ${home_label}"     # LV_SYMBOL_HOME
                     pressed:
                       bg_color: 0x48484A
                     on_click:
-                      - lvgl.page.show: main_page
+                      - lvgl.page.show: ${home_page}

@@ -304,6 +304,46 @@ packages:
       page_id: "main_page" 
 
 
+  heating_quad: !include
+    file: draft/ui/sensor/remote_quad_rows_remoteimage.yaml
+    vars:
+      uid: heating_quad
+      row: 2
+      column: 2
+      column_span: 2
+      page_id: "main_page"
+      row1_entity: "sensor.boiler_dhw_storagetemp2"
+      row1_title: "Vorrat"
+      row1_icon: $mdi_water_boiler
+      row1_unit: "°C"
+      row2_entity: "sensor.boiler_boiltemp"
+      row2_title: "Boiler"
+      row2_icon: $mdi_water_boiler
+      row2_unit: "°C"
+      row3_entity: "sensor.boiler_syspress"
+      row3_title: "Druck"
+      row3_icon: $mdi_gauge
+      row3_unit: "bar"
+      row4_entity: "sensor.boiler_curburnpow"     # > 0 = Brenner an
+      row4_title: "Brenner"
+      row4_mode: binary
+      row4_icon_on: $mdi_fire
+      row4_icon_off: $mdi_fire_off
+      row4_on_text: "AN"
+      row4_off_text: "AUS"
+      row4_on_color: "0xFF8C1A"
+      # 4 Zeilen in 120 px: kleine Fonts
+      icon_font: mdi_icons_20
+      title_font: nunito_14
+      value_font: nunito_14
+      icon_width: 26
+      pad_all: 6
+      # Kupfer → Dämmer-Violett, schließt oben an den Seiten-Gradienten an
+      bg_grad_dir: VER
+      bg_color: 0x4A2E2A
+      bg_grad_color: 0x2B2442
+
+
 #
   media_vero_play_yoga_akt_btn: !include
     file: draft/ui/button/remote_remoteimage.yaml
@@ -343,6 +383,13 @@ packages:
       page_id: "cal_page" 
       row: 0
       column: 0
+      month_names: ["Januar", "Februar", "März", "April", "Mai", "Juni",
+                    "Juli", "August", "September", "Oktober", "November", "Dezember"]
+      day_format: "{day}. {month}"
+      today_format: "Heute, {day}. {month}"
+      text_events: "Termine"
+      text_all_day: "ganztags"
+      text_no_events: "Keine Termine"
 
 
 #  _____           _          __                    _                         
@@ -414,7 +461,10 @@ sensor:
     unit_of_measurement: "°C"
 
 
-
+esp32:
+  framework:
+    advanced:
+      loop_task_stack_size: 16384
 
 # This is the main LVGL section. We start with a simple grid.
 lvgl:
@@ -431,7 +481,7 @@ lvgl:
         - color: 0x0A0F1E     # Nachtblau
           position: 255
 
-  buffer_size: 100%
+  buffer_size: 50%
   pages:
     - id: main_page
       layout: 4x8
@@ -450,6 +500,12 @@ lvgl:
       widgets:
         - !include
           file: draft/ui/calendar/calendar_widget.yaml   # Pfad relativ zur Hauptdatei anpassen
+          vars:
+            weekday_names: ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+            title_placeholder: "Kalender"
+            events_placeholder: "Termine"
+            home_page: main_page
+            home_label: "Start"
 
 
         # You can use the package section above to add prebuilt button types or build your own custom button from scratch here.
@@ -502,4 +558,15 @@ font:
       $mdi_thermometer,
       $mdi_track_light,  # mdi-track-light - track lighting
       $mdi_white_balance_sunny,  # mdi-white-balance-sunny - color temp/sun icon
+    ]
+  # Kleine Icons für die Heizungs-Kachel (4 Zeilen pro 120-px-Kachel)
+  - file: 'https://github.com/Templarian/MaterialDesign-Webfont/raw/v7.4.47/fonts/materialdesignicons-webfont.ttf'
+    id: mdi_icons_20
+    size: 20
+    bpp: 8
+    glyphs: [
+      $mdi_water_boiler,
+      $mdi_gauge,
+      $mdi_fire,
+      $mdi_fire_off,
     ]

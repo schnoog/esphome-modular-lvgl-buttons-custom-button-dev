@@ -4,9 +4,9 @@
 #
 #  Erzeugt: sensor.display_kalender
 #    state   = Anzahl Termin-Einträge im angezeigten Monat
-#    title   = "Oktober 2026"
 #    grid    = "<offset>;<tage_im_monat>;<heute>;<yyyymm>"
 #              offset 0 = Montag, heute = 0 wenn nicht der aktuelle Monat
+#              (Monatsname/Sprache macht das Display selbst aus yyyymm)
 #    days    = "3;7;15;22"
 #    events  = "03|09:30|Zahnarzt\n07|-|Müll Bio\n..."   ("-" = ganztägig)
 #
@@ -110,8 +110,6 @@ template:
         icon: mdi:calendar-month
         state: "{{ cal_data.lines | count }}"
         attributes:
-          title: >-
-            {% set mon = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'] %}{{ mon[total % 12] ~ ' ' ~ (total // 12) }}
           grid: "{{ cal_data.offset }};{{ cal_data.dim }};{{ cal_data.today }};{{ cal_data.key }}"
           days: "{{ cal_data.days | join(';') }}"
           events: >-

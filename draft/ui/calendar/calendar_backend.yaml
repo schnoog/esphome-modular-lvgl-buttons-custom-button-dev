@@ -7,9 +7,33 @@
 #      vars:
 #        cal_sensor: sensor.display_kalender
 #
+#  Sprache (Default: Englisch) – optionale vars, z.B. für Deutsch:
+#
+#        month_names: ["Januar", "Februar", "März", "April", "Mai", "Juni",
+#                      "Juli", "August", "September", "Oktober", "November", "Dezember"]
+#        title_format: "{month} {year}"         # Kopfzeile über dem Raster
+#        day_format: "{day}. {month}"           # Kopf der Terminliste
+#        today_format: "Heute, {day}. {month}"  # ... wenn der Tag heute ist
+#        text_events: "Termine"                 # Kopf, solange kein Tag gewählt
+#        text_all_day: "ganztags"
+#        text_no_events: "Keine Termine"
+#
+#  Der Monatstitel wird hier aus dem yyyymm-Feld von "grid" gebaut;
+#  das HA-Attribut "title" wird nicht (mehr) benötigt.
+#
 #  Erwartet im Widget: buttonmatrix id: cal_matrix,
 #                      labels cal_title_label, cal_day_header, cal_event_list
 # =====================================================================
+
+defaults:
+  month_names: ["January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"]
+  title_format: "{month} {year}"
+  day_format: "{month} {day}"
+  today_format: "Today, {month} {day}"
+  text_events: "Events"
+  text_all_day: "all day"
+  text_no_events: "No events"
 
 globals:
   - id: cal_offset          # Spalte des 1. (0 = Montag)
@@ -27,19 +51,11 @@ globals:
   - id: cal_month_key       # yyyymm des angezeigten Monats
     type: int
     initial_value: "0"
+  - id: cal_month_name      # Name des angezeigten Monats (aus month_names)
+    type: std::string
+    initial_value: '""'
 
 text_sensor:
-  - platform: homeassistant
-    id: cal_title
-    entity_id: ${cal_sensor}
-    attribute: title
-    internal: true
-    on_value:
-      - lvgl.label.update:
-          id: cal_title_label
-          text: !lambda return x;
-      - script.execute: cal_show_day
-
   - platform: homeassistant
     id: cal_grid
     entity_id: ${cal_sensor}
@@ -73,7 +89,7 @@ script:
     then:
       - lambda: |-
           // Speicher muss statisch sein: LVGL kopiert die Map NICHT
-          static char labels[42][16];
+          static char labels[42][24];   // groß genug für jeden int (sonst -Wformat-truncation)
           static const char *btn_map[42 + 5 + 1];
 
           int offset = -1, dim = 0, today = 0, key = 0;
@@ -126,6 +142,18 @@ script:
             if (day == today)        lv_buttonmatrix_set_button_ctrl(m, i, LV_BUTTONMATRIX_CTRL_RECOLOR);
           }
 
+          // Monatstitel aus yyyymm in der eingestellten Sprache
+          static const char *const MONTHS[12] = {"${ month_names | join('", "') }"};
+          int mon = key % 100;
+          if (mon >= 1 && mon <= 12) {
+            id(cal_month_name) = MONTHS[mon - 1];
+            std::string t = "${title_format}";
+            size_t p;
+            if ((p = t.find("{month}")) != std::string::npos) t.replace(p, 7, id(cal_month_name));
+            if ((p = t.find("{year}")) != std::string::npos) t.replace(p, 6, std::to_string(key / 100));
+            lv_label_set_text(id(cal_title_label), t.c_str());
+          }
+
           id(cal_offset) = offset;
           id(cal_dim) = dim;
           // Monats- oder Tageswechsel: Auswahl auf "heute" bzw. den 1. setzen
@@ -147,17 +175,18 @@ script:
           id: cal_day_header
           text: !lambda |-
             int d = id(cal_sel_day);
-            if (d < 1) return std::string("Termine");
-            const std::string &t = id(cal_title).state;
-            std::string month = t.substr(0, t.find(' '));
-            return std::string(d == id(cal_today) ? "Heute, " : "") +
-                   std::to_string(d) + ". " + month;
+            if (d < 1) return std::string("${text_events}");
+            std::string t = (d == id(cal_today)) ? "${today_format}" : "${day_format}";
+            size_t p;
+            if ((p = t.find("{day}")) != std::string::npos) t.replace(p, 5, std::to_string(d));
+            if ((p = t.find("{month}")) != std::string::npos) t.replace(p, 7, id(cal_month_name));
+            return t;
       - lvgl.label.update:
           id: cal_event_list
           text: !lambda |-
             int d = id(cal_sel_day);
             if (d < 1) return std::string("");
-            char prefix[4];
+            char prefix[16];              // groß genug für jeden int (sonst -Wformat-truncation)
             snprintf(prefix, sizeof(prefix), "%02d|", d);
 
             const std::string &ev = id(cal_events).state;
@@ -170,7 +199,7 @@ script:
                 size_t p2 = ev.find('|', pos + 3);
                 if (p2 != std::string::npos && p2 < nl) {
                   std::string tm = ev.substr(pos + 3, p2 - pos - 3);
-                  out += (tm == "-") ? "ganztags" : tm;
+                  out += (tm == "-") ? "${text_all_day}" : tm;
                   out += "   ";
                   out += ev.substr(p2 + 1, nl - p2 - 1);
                   out += "\n";
@@ -178,6 +207,6 @@ script:
               }
               pos = nl + 1;
             }
-            if (out.empty()) return std::string("Keine Termine");
+            if (out.empty()) return std::string("${text_no_events}");
             out.pop_back();
             return out;

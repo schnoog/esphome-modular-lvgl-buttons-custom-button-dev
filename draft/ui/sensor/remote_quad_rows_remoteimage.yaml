@@ -1,0 +1,526 @@
+# Remote quad tile — shows four HA entities as rows (icon | title | value)
+# inside one tile, e.g. a heating overview with storage/boiler temperature,
+# pressure and burner state. Read-only: no action scripts, no detail page.
+#
+# Background: plain colour or two-colour gradient (bg_* vars), optionally
+# with a remote image (online_image) drawn on top of it; the rows are drawn
+# above everything.
+#
+# vars:
+#   uid:                    unique identifier
+#   row:                    grid row
+#   column:                 grid column
+#   row_span:               (default: 1)
+#   column_span:            (default: 2)
+#   page_id:                parent page                             (default: main_page)
+#
+#   -- per row, N = 1..4 (only rowN_entity is required) --
+#   rowN_entity:            HA entity, e.g. "sensor.boiler_temperature" or
+#                           "binary_sensor.burner" (state is read as text)
+#   rowN_title:             text between icon and value             (default: "")
+#   rowN_icon:              icon glyph, e.g. $mdi_thermometer       (default: "")
+#   rowN_mode:              numeric | binary | text                 (default: numeric)
+#                             numeric: value with precision + unit
+#                             binary:  on/off text and icon (on = "on", "true",
+#                                      "open", "home" or a number > 0)
+#                             text:    raw state
+#   rowN_unit:              unit after the number, e.g. "°C", "%", "bar"
+#                           (default: "")
+#   rowN_precision:         decimals for numeric mode               (default: 1)
+#   rowN_on_text:           binary: value text when on              (default: "ON")
+#   rowN_off_text:          binary: value text when off             (default: "OFF")
+#   rowN_icon_on:           binary: icon when on                    (default: rowN_icon)
+#   rowN_icon_off:          binary: icon when off                   (default: rowN_icon)
+#   rowN_on_color:          binary: icon colour when on             (default: $icon_on_color)
+#   rowN_off_color:         binary: icon colour when off            (default: $icon_off_color)
+#
+#   -- look (apply to all rows) --
+#   icon_font:              (default: $icon_font)    icon_color:  (default: $label_on_color)
+#   title_font:             (default: text_font)     title_color: (default: $label_on_color)
+#   value_font:             (default: text_font)     value_color: (default: $label_on_color)
+#   icon_width:             width of the icon column in px          (default: 40)
+#   pad_all:                inner padding of the tile               (default: 10)
+#   radius:                 corner radius                           (default: 25)
+#
+#   -- background --
+#   bg_color:               main colour                             (default: $button_off_color)
+#   bg_opa:                 0%-100% or TRANSP/COVER                 (default: COVER)
+#   bg_grad_dir:            NONE | VER | HOR                        (default: NONE = plain colour)
+#   bg_grad_color:          second gradient colour                  (default: bg_color)
+#   bg_main_stop:           0..255 where bg_color starts to fade    (default: 0)
+#   bg_grad_stop:           0..255 where bg_grad_color is reached   (default: 255)
+#
+#   image_url:              image URL (optional; if not set, no image is loaded)
+#   image_format:           image format                            (default: AUTO)
+#   image_width:            image width in px                       (default: 200)
+#   image_height:           image height in px                      (default: 120)
+#   image_update_interval:  re-download interval, e.g. "30min"      (default: never)
+#   image_alignment:        image alignment inside the tile         (default: center)
+#   image_x, image_y:       image offset                            (default: 0, 0)
+#   image_opa:              image opacity. 0%-100% or TRANSP/COVER  (default: COVER)
+#
+# requires:
+#   $icon_font, $icon_on_color, $icon_off_color, $label_on_color,
+#   $button_off_color, text_font (theme), network connection, HA API connection
+#
+# notes:
+#   - All icons must be in the glyph list of the icon font.
+#   - Fonts need the glyphs of the unit ("°") and of non-ASCII titles.
+#   - Values show "--" until the first state arrives and while the entity
+#     is unavailable/unknown; a non-numeric state in numeric mode is shown
+#     as-is.
+#   - Image download is attempted every 16 s until it succeeds; the image
+#     stays hidden until then. RAM: width x height x 3 bytes, 200x120 ≈ 70 kB.
+#
+# example (heating):
+#   heating: !include
+#     file: draft/ui/sensor/remote_quad_rows_remoteimage.yaml
+#     vars:
+#       uid: heating
+#       row: 1
+#       column: 0
+#       row1_entity: sensor.water_storage_temperature
+#       row1_title: "Vorrat"
+#       row1_icon: $mdi_water_boiler
+#       row1_unit: "°C"
+#       row2_entity: sensor.boiler_temperature
+#       row2_title: "Boiler"
+#       row2_icon: $mdi_water_boiler
+#       row2_unit: "°C"
+#       row3_entity: binary_sensor.burner
+#       row3_title: "Brenner"
+#       row3_mode: binary
+#       row3_icon_on: $mdi_fire
+#       row3_icon_off: $mdi_fire_off
+#       row3_on_text: "AN"
+#       row3_off_text: "AUS"
+#       row4_entity: sensor.water_pressure
+#       row4_title: "Druck"
+#       row4_icon: $mdi_gauge
+#       row4_unit: "bar"
+#       bg_color: 0x3A1C1C
+#       bg_grad_color: 0x18213A
+#       bg_grad_dir: VER
+
+
+globals:
+- id: ${uid}_img_state          # 0 = pending, 1 = downloading, 2 = loaded
+  type: uint8_t
+  initial_value: '0'
+
+
+http_request:
+
+image:
+- platform: online_image
+  id: ${uid}_bg_image
+  url: '${image_url | default("http://localhost/no_image.png")}'
+  format: ${image_format | default("AUTO")}
+  type: RGB565
+  transparency: alpha_channel
+  resize: ${image_width | default(200)}x${image_height | default(120)}
+  update_interval: ${image_update_interval | default("never")}
+  on_download_finished:
+  - lambda: id(${uid}_img_state) = 2;
+  - lvgl.image.update:
+      id: img_${uid}
+      src: ${uid}_bg_image
+  - lvgl.widget.show: img_${uid}
+  on_error:
+  - lambda: id(${uid}_img_state) = 0;   # retry on next interval tick
+
+# ── Initial download once the network is up (works with WiFi and Ethernet) ──
+interval:
+- interval: 16s
+  then:
+  - if:
+      condition:
+        lambda: |-
+          return ${ 'true' if (image_url | default('')) != '' else 'false' } &&
+                 id(${uid}_img_state) == 0 &&
+                 network::is_connected();
+      then:
+      - lambda: id(${uid}_img_state) = 1;
+      - component.update: ${uid}_bg_image
+
+
+lvgl:
+  pages:
+  - id: !extend ${page_id | default("main_page")}
+    widgets:
+    - container:
+        id: ${uid}_tile
+        grid_cell_row_pos: ${row}
+        grid_cell_column_pos: ${column}
+        grid_cell_row_span: ${row_span | default(1)}
+        grid_cell_column_span: ${column_span | default(2)}
+        grid_cell_x_align: stretch
+        grid_cell_y_align: stretch
+        widgets:
+        - button:
+            id: button_${uid}
+            clickable: false
+            clip_corner: true
+            radius: ${radius | default(25)}
+            pad_all: 0
+            bg_opa: ${bg_opa | default("COVER")}
+            bg_color: ${bg_color | default(button_off_color)}
+            bg_grad_color: ${bg_grad_color | default(bg_color | default(button_off_color))}
+            bg_grad_dir: ${bg_grad_dir | default("NONE")}
+            bg_main_stop: ${bg_main_stop | default(0)}
+            bg_grad_stop: ${bg_grad_stop | default(255)}
+            widgets:
+            - image:
+                id: img_${uid}
+                src: ${uid}_bg_image
+                align: ${image_alignment | default("center")}
+                opa: ${image_opa | default("COVER")}
+                hidden: true             # shown after successful download
+                x: ${image_x | default(0)}
+                y: ${image_y | default(0)}
+            # Rows: four equal-height lines on top of the background
+            - obj:
+                id: ${uid}_rows
+                width: 100%
+                height: 100%
+                bg_opa: TRANSP
+                border_width: 0
+                pad_all: ${pad_all | default(10)}
+                scrollable: false
+                clickable: false
+                layout:
+                  type: flex
+                  flex_flow: COLUMN
+                  pad_row: 0
+                widgets:
+                # ── Row 1 ──
+                - obj:
+                    width: 100%
+                    flex_grow: 1
+                    bg_opa: TRANSP
+                    border_width: 0
+                    pad_all: 0
+                    scrollable: false
+                    clickable: false
+                    layout:
+                      type: flex
+                      flex_flow: ROW
+                      flex_align_cross: CENTER
+                      pad_column: 4
+                    widgets:
+                    - label:
+                        id: ${uid}_r1_icon
+                        width: ${icon_width | default(40)}
+                        text_font: ${icon_font}
+                        text_color: ${icon_color | default(label_on_color)}
+                        text: "${row1_icon_off | default(row1_icon | default(''))}"
+                    - label:
+                        id: ${uid}_r1_title
+                        flex_grow: 1
+                        long_mode: DOT
+                        text_font: ${title_font | default(text_font)}
+                        text_color: ${title_color | default(label_on_color)}
+                        text: "${row1_title | default('')}"
+                    - label:
+                        id: ${uid}_r1_value
+                        text_font: ${value_font | default(text_font)}
+                        text_color: ${value_color | default(label_on_color)}
+                        text: "--"
+                # ── Row 2 ──
+                - obj:
+                    width: 100%
+                    flex_grow: 1
+                    bg_opa: TRANSP
+                    border_width: 0
+                    pad_all: 0
+                    scrollable: false
+                    clickable: false
+                    layout:
+                      type: flex
+                      flex_flow: ROW
+                      flex_align_cross: CENTER
+                      pad_column: 4
+                    widgets:
+                    - label:
+                        id: ${uid}_r2_icon
+                        width: ${icon_width | default(40)}
+                        text_font: ${icon_font}
+                        text_color: ${icon_color | default(label_on_color)}
+                        text: "${row2_icon_off | default(row2_icon | default(''))}"
+                    - label:
+                        id: ${uid}_r2_title
+                        flex_grow: 1
+                        long_mode: DOT
+                        text_font: ${title_font | default(text_font)}
+                        text_color: ${title_color | default(label_on_color)}
+                        text: "${row2_title | default('')}"
+                    - label:
+                        id: ${uid}_r2_value
+                        text_font: ${value_font | default(text_font)}
+                        text_color: ${value_color | default(label_on_color)}
+                        text: "--"
+                # ── Row 3 ──
+                - obj:
+                    width: 100%
+                    flex_grow: 1
+                    bg_opa: TRANSP
+                    border_width: 0
+                    pad_all: 0
+                    scrollable: false
+                    clickable: false
+                    layout:
+                      type: flex
+                      flex_flow: ROW
+                      flex_align_cross: CENTER
+                      pad_column: 4
+                    widgets:
+                    - label:
+                        id: ${uid}_r3_icon
+                        width: ${icon_width | default(40)}
+                        text_font: ${icon_font}
+                        text_color: ${icon_color | default(label_on_color)}
+                        text: "${row3_icon_off | default(row3_icon | default(''))}"
+                    - label:
+                        id: ${uid}_r3_title
+                        flex_grow: 1
+                        long_mode: DOT
+                        text_font: ${title_font | default(text_font)}
+                        text_color: ${title_color | default(label_on_color)}
+                        text: "${row3_title | default('')}"
+                    - label:
+                        id: ${uid}_r3_value
+                        text_font: ${value_font | default(text_font)}
+                        text_color: ${value_color | default(label_on_color)}
+                        text: "--"
+                # ── Row 4 ──
+                - obj:
+                    width: 100%
+                    flex_grow: 1
+                    bg_opa: TRANSP
+                    border_width: 0
+                    pad_all: 0
+                    scrollable: false
+                    clickable: false
+                    layout:
+                      type: flex
+                      flex_flow: ROW
+                      flex_align_cross: CENTER
+                      pad_column: 4
+                    widgets:
+                    - label:
+                        id: ${uid}_r4_icon
+                        width: ${icon_width | default(40)}
+                        text_font: ${icon_font}
+                        text_color: ${icon_color | default(label_on_color)}
+                        text: "${row4_icon_off | default(row4_icon | default(''))}"
+                    - label:
+                        id: ${uid}_r4_title
+                        flex_grow: 1
+                        long_mode: DOT
+                        text_font: ${title_font | default(text_font)}
+                        text_color: ${title_color | default(label_on_color)}
+                        text: "${row4_title | default('')}"
+                    - label:
+                        id: ${uid}_r4_value
+                        text_font: ${value_font | default(text_font)}
+                        text_color: ${value_color | default(label_on_color)}
+                        text: "--"
+
+
+# ── Subscribe to the HA states (read as text, so sensor and binary_sensor work) ──
+text_sensor:
+  - platform: homeassistant
+    id: ${uid}_r1_state
+    entity_id: ${row1_entity}
+    internal: true
+    on_value:
+      then:
+        - if:
+            condition:
+              lambda: return ${ 'true' if (row1_mode | default('numeric')) == 'binary' else 'false' };
+            then:
+              - if:
+                  condition:
+                    lambda: |-
+                      auto n = parse_number<float>(x);
+                      return x == "on" || x == "true" || x == "open" || x == "home" ||
+                             (n.has_value() && *n > 0);
+                  then:
+                    - lvgl.label.update:
+                        id: ${uid}_r1_icon
+                        text: "${row1_icon_on | default(row1_icon | default(''))}"
+                        text_color: ${row1_on_color | default(icon_on_color)}
+                    - lvgl.label.update:
+                        id: ${uid}_r1_value
+                        text: "${row1_on_text | default('ON')}"
+                  else:
+                    - lvgl.label.update:
+                        id: ${uid}_r1_icon
+                        text: "${row1_icon_off | default(row1_icon | default(''))}"
+                        text_color: ${row1_off_color | default(icon_off_color)}
+                    - lvgl.label.update:
+                        id: ${uid}_r1_value
+                        text: !lambda |-
+                          if (x == "unavailable" || x == "unknown" || x.empty()) return std::string("--");
+                          return std::string("${row1_off_text | default('OFF')}");
+            else:
+              - lvgl.label.update:
+                  id: ${uid}_r1_value
+                  text: !lambda |-
+                    if (x == "unavailable" || x == "unknown" || x.empty()) return std::string("--");
+                    if (${ 'true' if (row1_mode | default('numeric')) == 'text' else 'false' }) return x;
+                    auto n = parse_number<float>(x);
+                    if (!n.has_value()) return x;
+                    char buf[32];
+                    snprintf(buf, sizeof(buf), "%.*f", ${row1_precision | default(1)}, *n);
+                    std::string s(buf);
+                    const char *unit = "${row1_unit | default('')}";
+                    if (*unit) { s += ' '; s += unit; }
+                    return s;
+
+  - platform: homeassistant
+    id: ${uid}_r2_state
+    entity_id: ${row2_entity}
+    internal: true
+    on_value:
+      then:
+        - if:
+            condition:
+              lambda: return ${ 'true' if (row2_mode | default('numeric')) == 'binary' else 'false' };
+            then:
+              - if:
+                  condition:
+                    lambda: |-
+                      auto n = parse_number<float>(x);
+                      return x == "on" || x == "true" || x == "open" || x == "home" ||
+                             (n.has_value() && *n > 0);
+                  then:
+                    - lvgl.label.update:
+                        id: ${uid}_r2_icon
+                        text: "${row2_icon_on | default(row2_icon | default(''))}"
+                        text_color: ${row2_on_color | default(icon_on_color)}
+                    - lvgl.label.update:
+                        id: ${uid}_r2_value
+                        text: "${row2_on_text | default('ON')}"
+                  else:
+                    - lvgl.label.update:
+                        id: ${uid}_r2_icon
+                        text: "${row2_icon_off | default(row2_icon | default(''))}"
+                        text_color: ${row2_off_color | default(icon_off_color)}
+                    - lvgl.label.update:
+                        id: ${uid}_r2_value
+                        text: !lambda |-
+                          if (x == "unavailable" || x == "unknown" || x.empty()) return std::string("--");
+                          return std::string("${row2_off_text | default('OFF')}");
+            else:
+              - lvgl.label.update:
+                  id: ${uid}_r2_value
+                  text: !lambda |-
+                    if (x == "unavailable" || x == "unknown" || x.empty()) return std::string("--");
+                    if (${ 'true' if (row2_mode | default('numeric')) == 'text' else 'false' }) return x;
+                    auto n = parse_number<float>(x);
+                    if (!n.has_value()) return x;
+                    char buf[32];
+                    snprintf(buf, sizeof(buf), "%.*f", ${row2_precision | default(1)}, *n);
+                    std::string s(buf);
+                    const char *unit = "${row2_unit | default('')}";
+                    if (*unit) { s += ' '; s += unit; }
+                    return s;
+
+  - platform: homeassistant
+    id: ${uid}_r3_state
+    entity_id: ${row3_entity}
+    internal: true
+    on_value:
+      then:
+        - if:
+            condition:
+              lambda: return ${ 'true' if (row3_mode | default('numeric')) == 'binary' else 'false' };
+            then:
+              - if:
+                  condition:
+                    lambda: |-
+                      auto n = parse_number<float>(x);
+                      return x == "on" || x == "true" || x == "open" || x == "home" ||
+                             (n.has_value() && *n > 0);
+                  then:
+                    - lvgl.label.update:
+                        id: ${uid}_r3_icon
+                        text: "${row3_icon_on | default(row3_icon | default(''))}"
+                        text_color: ${row3_on_color | default(icon_on_color)}
+                    - lvgl.label.update:
+                        id: ${uid}_r3_value
+                        text: "${row3_on_text | default('ON')}"
+                  else:
+                    - lvgl.label.update:
+                        id: ${uid}_r3_icon
+                        text: "${row3_icon_off | default(row3_icon | default(''))}"
+                        text_color: ${row3_off_color | default(icon_off_color)}
+                    - lvgl.label.update:
+                        id: ${uid}_r3_value
+                        text: !lambda |-
+                          if (x == "unavailable" || x == "unknown" || x.empty()) return std::string("--");
+                          return std::string("${row3_off_text | default('OFF')}");
+            else:
+              - lvgl.label.update:
+                  id: ${uid}_r3_value
+                  text: !lambda |-
+                    if (x == "unavailable" || x == "unknown" || x.empty()) return std::string("--");
+                    if (${ 'true' if (row3_mode | default('numeric')) == 'text' else 'false' }) return x;
+                    auto n = parse_number<float>(x);
+                    if (!n.has_value()) return x;
+                    char buf[32];
+                    snprintf(buf, sizeof(buf), "%.*f", ${row3_precision | default(1)}, *n);
+                    std::string s(buf);
+                    const char *unit = "${row3_unit | default('')}";
+                    if (*unit) { s += ' '; s += unit; }
+                    return s;
+
+  - platform: homeassistant
+    id: ${uid}_r4_state
+    entity_id: ${row4_entity}
+    internal: true
+    on_value:
+      then:
+        - if:
+            condition:
+              lambda: return ${ 'true' if (row4_mode | default('numeric')) == 'binary' else 'false' };
+            then:
+              - if:
+                  condition:
+                    lambda: |-
+                      auto n = parse_number<float>(x);
+                      return x == "on" || x == "true" || x == "open" || x == "home" ||
+                             (n.has_value() && *n > 0);
+                  then:
+                    - lvgl.label.update:
+                        id: ${uid}_r4_icon
+                        text: "${row4_icon_on | default(row4_icon | default(''))}"
+                        text_color: ${row4_on_color | default(icon_on_color)}
+                    - lvgl.label.update:
+                        id: ${uid}_r4_value
+                        text: "${row4_on_text | default('ON')}"
+                  else:
+                    - lvgl.label.update:
+                        id: ${uid}_r4_icon
+                        text: "${row4_icon_off | default(row4_icon | default(''))}"
+                        text_color: ${row4_off_color | default(icon_off_color)}
+                    - lvgl.label.update:
+                        id: ${uid}_r4_value
+                        text: !lambda |-
+                          if (x == "unavailable" || x == "unknown" || x.empty()) return std::string("--");
+                          return std::string("${row4_off_text | default('OFF')}");
+            else:
+              - lvgl.label.update:
+                  id: ${uid}_r4_value
+                  text: !lambda |-
+                    if (x == "unavailable" || x == "unknown" || x.empty()) return std::string("--");
+                    if (${ 'true' if (row4_mode | default('numeric')) == 'text' else 'false' }) return x;
+                    auto n = parse_number<float>(x);
+                    if (!n.has_value()) return x;
+                    char buf[32];
+                    snprintf(buf, sizeof(buf), "%.*f", ${row4_precision | default(1)}, *n);
+                    std::string s(buf);
+                    const char *unit = "${row4_unit | default('')}";
+                    if (*unit) { s += ' '; s += unit; }
+                    return s;
