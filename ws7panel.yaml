@@ -408,6 +408,18 @@ packages:
 
 
 
+  daytime_clock: !include
+    file: draft/ui/clock/daytime_gradient_clock.yaml
+    vars:
+      uid: daytime_clock
+      row: 2
+      column: 6
+      column_span: 2
+      page_id: "main_page"
+      weekday_names: ["Montag", "Dienstag", "Mittwoch", "Donnerstag",
+                      "Freitag", "Samstag", "Sonntag"]
+      date_format: "{weekday}, {day}."
+
   mycalendar: !include
     file: draft/ui/calendar/calendar_backend.yaml
     vars:

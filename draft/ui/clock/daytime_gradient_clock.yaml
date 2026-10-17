@@ -1,0 +1,160 @@
+# Daytime gradient clock tile — shows weekday + day of month and a large
+# time. The background gradient follows the time of day (night → dawn →
+# day → dusk → night), interpolated smoothly between configurable stops.
+# Read-only: no action scripts, no detail page.
+#
+# vars:
+#   uid:                    unique identifier
+#   row:                    grid row
+#   column:                 grid column
+#   row_span:               (default: 1)
+#   column_span:            (default: 2)
+#   page_id:                parent page                             (default: main_page)
+#   time_id:                time component                          (default: system_time)
+#
+#   -- text (default: English) --
+#   weekday_names:          7 names, starting with Monday
+#                           (default: ["Monday", ..., "Sunday"])
+#   date_format:            first line; {weekday} and {day} are replaced
+#                           (default: "{weekday} {day}")
+#   time_format:            strftime format of the time             (default: "%H:%M")
+#
+#   -- look --
+#   date_font:              (default: nunito_20)     date_color: (default: $label_on_color)
+#   time_font:              (default: nunito_48)     time_color: (default: $label_on_color)
+#   date_alignment:         (default: top_left)      date_x, date_y: (default: 0, 0)
+#   time_alignment:         (default: bottom_right)  time_x, time_y: (default: 0, 6)
+#   radius:                 corner radius                           (default: 25)
+#   bg_grad_dir:            VER | HOR                               (default: VER)
+#   gradient_stops:         list of [hour, top_colour, bottom_colour], hours
+#                           ascending in 0..24 (decimals allowed, 6.5 = 06:30);
+#                           wraps from the last stop to the first one
+#                           (default: night 0x0A0F1E, dawn rose, day steel blue,
+#                            dusk copper, evening violet — matches the page
+#                            gradient of ws7panel)
+#
+# requires:
+#   $label_on_color (theme), nunito_20 / nunito_48 (theme fonts), a time
+#   component (default id: system_time)
+#
+# notes:
+#   - Updated once per second, the labels and colours only change when the
+#     minute changes. Before the first time sync "--:--" is shown.
+#   - Fonts need the glyphs of the weekday names (umlauts: GF_Latin_Core).
+#   - For "%H:%M:%S" in time_format, the tile still redraws once per minute;
+#     seconds would lag. Use minute formats.
+#
+# example (German):
+#   clock: !include
+#     file: draft/ui/clock/daytime_gradient_clock.yaml
+#     vars:
+#       uid: clock
+#       row: 0
+#       column: 6
+#       weekday_names: ["Montag", "Dienstag", "Mittwoch", "Donnerstag",
+#                       "Freitag", "Samstag", "Sonntag"]
+#       date_format: "{weekday}, {day}."
+
+defaults:
+  weekday_names: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+  date_format: "{weekday} {day}"
+  time_format: "%H:%M"
+  time_id: system_time
+  gradient_stops: [
+    [0.0,  0x0A0F1E, 0x05080F],   # Nacht
+    [5.0,  0x0A0F1E, 0x18213A],   # vor der Dämmerung
+    [6.5,  0x5A3452, 0x2B2442],   # Morgenrot (Rosé-Violett)
+    [8.5,  0x2A3A5C, 0x18213A],   # Tag: Stahlblau → Navy
+    [17.0, 0x2A3A5C, 0x18213A],
+    [19.0, 0x5A3426, 0x2B2442],   # Abendrot (Kupfer)
+    [21.0, 0x2B2442, 0x18213A],   # Abend: Dämmer-Violett
+    [23.0, 0x0A0F1E, 0x05080F],   # Nacht
+  ]
+
+
+interval:
+- interval: 1s
+  then:
+  - lambda: |-
+      auto now = id(${time_id}).now();
+      if (!now.is_valid()) return;
+      static int last_minute = -1;
+      const int minute_of_day = now.hour * 60 + now.minute;
+      if (minute_of_day == last_minute) return;
+      last_minute = minute_of_day;
+
+      // ── Text ──
+      static const char *const WEEKDAYS[7] = {"${ weekday_names | join('", "') }"};
+      std::string date = "${date_format}";
+      size_t p;
+      if ((p = date.find("{weekday}")) != std::string::npos)
+        date.replace(p, 9, WEEKDAYS[(now.day_of_week + 5) % 7]);   // ESPTime: 1 = Sunday
+      if ((p = date.find("{day}")) != std::string::npos)
+        date.replace(p, 5, std::to_string(now.day_of_month));
+      lv_label_set_text(id(date_${uid}), date.c_str());
+      lv_label_set_text(id(time_${uid}), now.strftime("${time_format}").c_str());
+
+      // ── Background: interpolate between the two surrounding stops ──
+      struct Stop { float hour; uint32_t top, bottom; };
+      static const Stop STOPS[] = ${ (gradient_stops | string).replace('[', '{').replace(']', '}') };
+      const int n = sizeof(STOPS) / sizeof(STOPS[0]);
+      const float h = minute_of_day / 60.0f;
+      int i = n - 1;                                  // last stop <= h (wraps)
+      for (int k = 0; k < n; k++) if (STOPS[k].hour <= h) i = k;
+      const Stop &a = STOPS[i];
+      const Stop &b = STOPS[(i + 1) % n];
+      float span = b.hour - a.hour;
+      float pos = h - a.hour;
+      if (span <= 0) span += 24.0f;
+      if (pos < 0) pos += 24.0f;
+      const float t = span > 0 ? pos / span : 0.0f;
+      auto mix = [t](uint32_t c1, uint32_t c2) -> lv_color_t {
+        auto ch = [t](uint32_t x, uint32_t y, int s) -> uint32_t {
+          float v1 = (x >> s) & 0xFF, v2 = (y >> s) & 0xFF;
+          return (uint32_t) (v1 + (v2 - v1) * t + 0.5f) << s;
+        };
+        return lv_color_hex(ch(c1, c2, 16) | ch(c1, c2, 8) | ch(c1, c2, 0));
+      };
+      lv_obj_t *btn = id(button_${uid});
+      lv_obj_set_style_bg_color(btn, mix(a.top, b.top), LV_PART_MAIN);
+      lv_obj_set_style_bg_grad_color(btn, mix(a.bottom, b.bottom), LV_PART_MAIN);
+
+
+lvgl:
+  pages:
+  - id: !extend ${page_id | default("main_page")}
+    widgets:
+    - container:
+        id: ${uid}_tile
+        grid_cell_row_pos: ${row}
+        grid_cell_column_pos: ${column}
+        grid_cell_row_span: ${row_span | default(1)}
+        grid_cell_column_span: ${column_span | default(2)}
+        grid_cell_x_align: stretch
+        grid_cell_y_align: stretch
+        widgets:
+        - button:
+            id: button_${uid}
+            clickable: false
+            radius: ${radius | default(25)}
+            bg_opa: COVER
+            bg_color: 0x0A0F1E               # replaced by the interval above
+            bg_grad_color: 0x05080F
+            bg_grad_dir: ${bg_grad_dir | default("VER")}
+            widgets:
+            - label:
+                id: date_${uid}
+                align: ${date_alignment | default("top_left")}
+                x: ${date_x | default(0)}
+                y: ${date_y | default(0)}
+                text_font: ${date_font | default("nunito_20")}
+                text_color: ${date_color | default(label_on_color)}
+                text: ""
+            - label:
+                id: time_${uid}
+                align: ${time_alignment | default("bottom_right")}
+                x: ${time_x | default(0)}
+                y: ${time_y | default(6)}
+                text_font: ${time_font | default("nunito_48")}
+                text_color: ${time_color | default(label_on_color)}
+                text: "--:--"
