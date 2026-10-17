@@ -24,6 +24,13 @@
 #   image_y:                image y offset                          (default: 0)
 #   image_opa:              image opacity. 0%-100% or TRANSP/COVER  (default: COVER)
 #
+#   -- background: plain colour or gradient; a background image, if any, is drawn on top --
+#   bg_color:               main colour                             (default: $button_off_color)
+#   bg_grad_dir:            NONE | VER | HOR                        (default: NONE = plain colour)
+#   bg_grad_color:          second gradient colour                  (default: bg_color)
+#   bg_main_stop:           0..255 where bg_color starts to fade    (default: 0)
+#   bg_grad_stop:           0..255 where bg_grad_color is reached   (default: 255)
+#
 # requires:
 #   $icon_font (theme), network connection, HA API connection
 #   "Allow the device to perform Home Assistant actions" must be enabled
@@ -94,6 +101,12 @@ lvgl:
         widgets:
         - button:
             id: button_${uid}
+            bg_opa: ${bg_opa | default("COVER")}
+            bg_color: ${bg_color | default(button_off_color)}
+            bg_grad_color: ${bg_grad_color | default(bg_color | default(button_off_color))}
+            bg_grad_dir: ${bg_grad_dir | default("NONE")}
+            bg_main_stop: ${bg_main_stop | default(0)}
+            bg_grad_stop: ${bg_grad_stop | default(255)}
             clip_corner: true  
             widgets:
 

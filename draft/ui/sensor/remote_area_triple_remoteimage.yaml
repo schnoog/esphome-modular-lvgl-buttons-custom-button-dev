@@ -36,6 +36,13 @@
 #   image_x, image_y:       image offset                            (default: 0, 0)
 #   image_opa:              image opacity. 0%-100% or TRANSP/COVER  (default: COVER)
 #
+#   -- background: plain colour or gradient; a background image, if any, is drawn on top --
+#   bg_color:               main colour                             (default: $button_off_color)
+#   bg_grad_dir:            NONE | VER | HOR                        (default: NONE = plain colour)
+#   bg_grad_color:          second gradient colour                  (default: bg_color)
+#   bg_main_stop:           0..255 where bg_color starts to fade    (default: 0)
+#   bg_grad_stop:           0..255 where bg_grad_color is reached   (default: 255)
+#
 #   icon_alignment:         (default: top_left)      icon_x, icon_y:       (default: 0, 0)
 #   label_alignment:        (default: top_mid)       label_x, label_y:     (default: 0, 0)
 #   value_1_alignment:      (default: left_mid)      value_1_x, value_1_y: (default: 0, 0)
@@ -120,6 +127,11 @@ lvgl:
 #            bg_image_src: ${background}
 #            bg_image_opa: ${bg_image_opa | default("40%")}
             id: button_${uid}
+            bg_color: ${bg_color | default(button_off_color)}
+            bg_grad_color: ${bg_grad_color | default(bg_color | default(button_off_color))}
+            bg_grad_dir: ${bg_grad_dir | default("NONE")}
+            bg_main_stop: ${bg_main_stop | default(0)}
+            bg_grad_stop: ${bg_grad_stop | default(255)}
             clickable: false
             widgets:
             - image:

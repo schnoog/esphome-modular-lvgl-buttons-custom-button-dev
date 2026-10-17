@@ -94,6 +94,10 @@ packages:
   outdoor_temp_tile: !include
     file: draft/ui/sensor/remote_remoteimage.yaml
     vars:
+      # Klima: Stahlblau → Navy
+      bg_grad_dir: VER
+      bg_color: 0x2A3A5C
+      bg_grad_color: 0x18213A
       uid: outdoor_temp_img
       entity_id: sensor.sensor_bmp280_2_bmp280_2_temperature_2
       page_id: main_page
@@ -115,6 +119,10 @@ packages:
   temp_multi_1_display: !include     # Wohnzimmer & Küche
     file: draft/ui/sensor/remote_area_double_remoteimage.yaml
     vars:
+      # Klima: Stahlblau → Navy
+      bg_grad_dir: VER
+      bg_color: 0x2A3A5C
+      bg_grad_color: 0x18213A
       uid: temp_multi_1_display 
       sensor_entity1: "sensor.sensor_bmp280_3_bmp280_3_temperature_2" # WZ
       sensor_entity2: "sensor.sensor_bmp280_4_bmp280_4_temperature_2" #Küche
@@ -150,6 +158,10 @@ packages:
   temp_display: !include
     file: draft/ui/sensor/remote_area_triple_remoteimage.yaml
     vars:
+      # Klima: Stahlblau → Navy
+      bg_grad_dir: VER
+      bg_color: 0x2A3A5C
+      bg_grad_color: 0x18213A
       uid: temp_display
       sensor1_entity: "sensor.cyd1_temperatur_2"
       sensor2_entity: "sensor.cyd1_luftfeuchtigkeit_2"
@@ -175,6 +187,10 @@ packages:
   page_button_main_media: !include
     file: draft/ui/page/page_button_remoteimage.yaml
     vars:
+      # Medien: Violett → tiefes Violett
+      bg_grad_dir: VER
+      bg_color: 0x45325E
+      bg_grad_color: 0x221D38
       image_url: "http://192.168.178.119:8123/local/images/tile_media.png"
       image_format: PNG
       image_width: 200
@@ -191,6 +207,10 @@ packages:
   main_cam_button: !include
     file: draft/ui/page/page_camerabutton.yaml
     vars:
+      # Kamera: Graphit → Schwarz
+      bg_grad_dir: VER
+      bg_color: 0x2A2A30
+      bg_grad_color: 0x141418
       camera_url: "http://192.168.178.27:180/rd/esp32s3camX_256.jpg"
       update_interval: "1800s"
       image_width: 256
@@ -210,6 +230,10 @@ packages:
   temp_heating_vorlauf_btn: !include
     file: draft/ui/sensor/remote_remoteimage.yaml
     vars:
+      # Heizung: Kupfer → Dämmer-Violett
+      bg_grad_dir: VER
+      bg_color: 0x4A2E2A
+      bg_grad_color: 0x2B2442
       uid: temp_heating_vorlauf
       entity_id: "sensor.boiler_curflowtemp"
       row: 1
@@ -348,6 +372,10 @@ packages:
   media_vero_play_yoga_akt_btn: !include
     file: draft/ui/button/remote_remoteimage.yaml
     vars:
+      # Medien: Violett → tiefes Violett
+      bg_grad_dir: VER
+      bg_color: 0x45325E
+      bg_grad_color: 0x221D38
       uid: media_vero_play_yoga_akt_btn
       entity_id: "script.vero_play_yoga_neu"
       row: 3
@@ -364,6 +392,10 @@ packages:
   sendspin_info_btn: !include
     file: draft/ui/sensor/sendspin.yaml
     vars:
+      # Medien: Violett → tiefes Violett
+      bg_grad_dir: VER
+      bg_color: 0x45325E
+      bg_grad_color: 0x221D38
       uid: sendspin_info
       row: 3
       column: 4

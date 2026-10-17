@@ -33,6 +33,13 @@
 #   image_opa:             opacity of the image, e.g. 60% to keep text readable (default: COVER)
 #   image_update_interval: re-download interval, e.g. 15min (default: never = load once)
 #
+#   -- background: plain colour or gradient; a background image, if any, is drawn on top --
+#   bg_color:               main colour                             (default: $button_off_color)
+#   bg_grad_dir:            NONE | VER | HOR                        (default: NONE = plain colour)
+#   bg_grad_color:          second gradient colour                  (default: bg_color)
+#   bg_main_stop:           0..255 where bg_color starts to fade    (default: 0)
+#   bg_grad_stop:           0..255 where bg_grad_color is reached   (default: 255)
+#
 # Notes:
 #   - Icon/label are always created but hidden when not passed (ESPHome packages
 #     cannot omit widgets conditionally).
@@ -97,6 +104,11 @@ lvgl:
         widgets:
         - button:
             id: button_${uid}
+            bg_color: ${bg_color | default(button_off_color)}
+            bg_grad_color: ${bg_grad_color | default(bg_color | default(button_off_color))}
+            bg_grad_dir: ${bg_grad_dir | default("NONE")}
+            bg_main_stop: ${bg_main_stop | default(0)}
+            bg_grad_stop: ${bg_grad_stop | default(255)}
             bg_opa: ${bg_opa | default("COVER")}
             clickable: false
             clip_corner: true            # clip image to the rounded tile corners

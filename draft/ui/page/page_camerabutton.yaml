@@ -19,6 +19,13 @@
 #   column_span:     (default: 1)
 #   page_id:         parent page (default: main_page)
 #   click_page:      destination page name (default: main_page)
+#
+#   -- background: plain colour or gradient; a background image, if any, is drawn on top --
+#   bg_color:               main colour                             (default: 0x000000)
+#   bg_grad_dir:            NONE | VER | HOR                        (default: NONE = plain colour)
+#   bg_grad_color:          second gradient colour                  (default: bg_color)
+#   bg_main_stop:           0..255 where bg_color starts to fade    (default: 0)
+#   bg_grad_stop:           0..255 where bg_grad_color is reached   (default: 255)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Visibility tracking
@@ -99,8 +106,12 @@ lvgl:
             widgets:
               - button:
                   id: button_${uid}
+                  bg_color: ${bg_color | default("0x000000")}
+                  bg_grad_color: ${bg_grad_color | default(bg_color | default("0x000000"))}
+                  bg_grad_dir: ${bg_grad_dir | default("NONE")}
+                  bg_main_stop: ${bg_main_stop | default(0)}
+                  bg_grad_stop: ${bg_grad_stop | default(255)}
                   bg_opa: COVER
-                  bg_color: 0x000000
                   # Image fills the tile edge to edge, corners follow button radius
                   pad_all: 0
                   clip_corner: true
