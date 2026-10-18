@@ -10,7 +10,7 @@
 #   uid:             unique identifier
 #   row:             grid row
 #   column:          grid column
-#   text:            tile label
+#   text:            tile label (optional – hidden if omitted)
 #   camera_url:      URL returning a JPEG snapshot
 #   update_interval: refresh interval (default: 10s)
 #   image_width:     max. image width,  image is scaled to fit (default: 256)
@@ -128,7 +128,8 @@ lvgl:
 
                     - label:
                         id: label_${uid}
-                        text: ${text}
+                        hidden: "${ 'false' if (text | default('')) != '' else 'true' }"   # no text → no label
+                        text: "${text | default('')}"
                         align: bottom_left
                         x: 8
                         y: -8

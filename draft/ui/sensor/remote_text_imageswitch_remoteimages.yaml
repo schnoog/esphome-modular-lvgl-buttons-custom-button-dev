@@ -18,6 +18,8 @@
 #   page_id:               parent page (default: main_page)
 #   label_font:            font for the tile name
 #   sensor_font:           font for the value (needs letter glyphs, not just digits!)
+#   show_value:            false = hide the value, e.g. when the images already show
+#                          the state (optional, default: true)
 #
 #   icon_alignment:        LVGL align of the icon  (default: top_left)
 #   label_alignment:       LVGL align of the label (default: bottom_left)
@@ -241,6 +243,7 @@ lvgl:
                 x: ${label_x | default(0)}
             - label:
                 id: value_${uid}
+                hidden: "${ 'true' if (show_value | default(true) | string | lower) in ['false', 'no', 'off', '0'] else 'false' }"
                 align: ${value_alignment | default("top_right")}
                 text_font: ${sensor_font | default(text_font)}
                 text_color: $label_on_color

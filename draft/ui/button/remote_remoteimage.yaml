@@ -9,8 +9,8 @@
 #                           "scene.movie", "light.kitchen"
 #   row:                    grid row
 #   column:                 grid column
-#   text:                   label shown bottom left (wraps, full tile width)
-#   icon:                   icon glyph shown top left
+#   text:                   label shown bottom left (wraps, full tile width) (optional – hidden if omitted)
+#   icon:                   icon glyph shown top left (optional – hidden if omitted)
 #   row_span:               (default: 1)
 #   column_span:            (default: 1)
 #   page_id:                parent page                             (default: main_page)
@@ -123,13 +123,15 @@ lvgl:
                 id: icon_${uid}
                 text_font: $icon_font
                 align: top_left
-                text: ${icon}
+                hidden: "${ 'false' if (icon | default('')) != '' else 'true' }"   # no icon → no label
+                text: "${icon | default('')}"
             - label:
                 id: label_${uid}
                 align: bottom_left
                 long_mode: wrap
                 width: 100%
-                text: ${text}
+                hidden: "${ 'false' if (text | default('')) != '' else 'true' }"   # no text → no label
+                text: "${text | default('')}"
             on_short_click:
               then:
               - homeassistant.action:

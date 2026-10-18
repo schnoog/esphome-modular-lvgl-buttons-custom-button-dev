@@ -57,8 +57,8 @@ packages:
       entity_id: "script.ma_radio_seefunk_all"
       row: 1
       column: 0
-      text: "Seefunk"
-      icon: $mdi_radio
+      #text: "Seefunk"
+      #icon: $mdi_radio
       page_id: "media_page"
       bg_grad_dir: VER
       bg_color: $grad_radio_top
@@ -75,8 +75,8 @@ packages:
       entity_id: "script.ma_radio_badenfm_all"
       row: 2
       column: 0
-      text: "Baden FM -deutsch-"
-      icon: $mdi_radio
+      #text: "Baden FM -deutsch-"
+      #icon: $mdi_radio
       page_id: "media_page"
       bg_grad_dir: VER
       bg_color: $grad_radio_top
@@ -112,8 +112,8 @@ packages:
       entity_id: "script.ma_radio_swr1_all"
       row: 1
       column: 1
-      text: "SWR1"
-      icon: $mdi_radio
+      #text: "SWR1"
+      #icon: $mdi_radio
       page_id: "media_page"
       bg_grad_dir: VER
       bg_color: $grad_radio_top
@@ -130,8 +130,8 @@ packages:
       entity_id: "script.ma_radio_swr4_all"
       row: 2
       column: 1
-      text: "SWR4"
-      icon: $mdi_radio
+      #text: "SWR4"
+      #icon: $mdi_radio
       page_id: "media_page"
       bg_grad_dir: VER
       bg_color: $grad_radio_top
@@ -152,8 +152,8 @@ packages:
       entity_id: "script.ma_radio_swr3_all"
       row: 1
       column: 2
-      text: "SWR3"
-      icon: $mdi_radio
+      #text: "SWR3"
+      #icon: $mdi_radio
       page_id: "media_page"
       bg_grad_dir: VER
       bg_color: $grad_radio_top
@@ -170,8 +170,8 @@ packages:
       entity_id: "script.ma_radio_oldieantenne_all"
       row: 2
       column: 2
-      text: "Oldie Antenne"
-      icon: $mdi_radio
+      #text: "Oldie Antenne"
+      #icon: $mdi_radio
       page_id: "media_page"
       bg_grad_dir: VER
       bg_color: $grad_radio_top
@@ -190,8 +190,8 @@ packages:
       entity_id: "script.ma_radio_badenfm_all_duplizieren"
       row: 1
       column: 3
-      text: "Baden FM"
-      icon: $mdi_radio
+      #text: "Baden FM"
+      #icon: $mdi_radio
       page_id: "media_page"
       bg_grad_dir: VER
       bg_color: $grad_radio_top
@@ -209,8 +209,8 @@ packages:
       entity_id: "script.ma_stopp"
       row: 2
       column: 3
-      text: "Stream stopp"
-      icon: $mdi_volume_off
+      #text: "Stream stopp"
+      #icon: $mdi_volume_off
       page_id: "media_page"
       bg_grad_dir: VER
       bg_color: $grad_media_top
@@ -231,8 +231,8 @@ packages:
       entity_id: "script.avr_media_tv"
       row: 0
       column: 4
-      text: "TV"
-      icon: ""
+      #text: "TV"
+      #icon: ""
       page_id: "media_page"
       bg_grad_dir: VER
       bg_color: $grad_avr_top
@@ -249,8 +249,8 @@ packages:
       entity_id: "script.avr_media_mp"
       row: 1
       column: 4
-      text: "DVD/MP"
-      icon: ""
+      #text: "DVD/MP"
+      #icon: ""
       page_id: "media_page"
       bg_grad_dir: VER
       bg_color: $grad_avr_top
@@ -267,8 +267,8 @@ packages:
       entity_id: "script.avr_media_aux"
       row: 2
       column: 4
-      text: "AUX"
-      icon: ""
+      #text: "AUX"
+      #icon: ""
       page_id: "media_page"
       bg_grad_dir: VER
       bg_color: $grad_avr_top
@@ -287,8 +287,8 @@ packages:
       entity_id: "script.tv_power"
       row: 0
       column: 5
-      text: "TV Power"
-      icon: ""
+      #text: "TV Power"
+      #icon: ""
       page_id: "media_page"
       bg_grad_dir: VER
       bg_color: $grad_avr_top
@@ -305,8 +305,8 @@ packages:
       entity_id: "script.avr_power"
       row: 1
       column: 5
-      text: "Power"
-      icon: ""
+      #text: "Power"
+      #icon: ""
       page_id: "media_page"
       bg_grad_dir: VER
       bg_color: $grad_avr_top
@@ -323,8 +323,8 @@ packages:
       entity_id: "script.avr_vol_mute"
       row: 2
       column: 5
-      text: "Mute"
-      icon: $mdi_volume_off
+      #text: "Mute"
+      #icon: $mdi_volume_off
       page_id: "media_page"
       bg_grad_dir: VER
       bg_color: $grad_avr_top
@@ -345,8 +345,8 @@ packages:
       row: 2
       column: 6
       column_span: 2
-      text: "Vol -"
-      icon: $mdi_volume_minus
+      #text: "Vol -"
+      #icon: $mdi_volume_minus
       page_id: "media_page"
       bg_grad_dir: VER
       bg_color: $grad_avr_top
@@ -364,8 +364,8 @@ packages:
       row: 1
       column: 6
       column_span: 2
-      text: "Vol +"
-      icon: $mdi_volume_plus
+      #text: "Vol +"
+      #icon: $mdi_volume_plus
       page_id: "media_page"
       bg_grad_dir: VER
       bg_color: $grad_avr_top

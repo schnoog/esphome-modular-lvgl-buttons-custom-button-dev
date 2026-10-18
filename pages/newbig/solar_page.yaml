@@ -38,8 +38,8 @@ packages:
       row: 0
       column: 0
       column_span: 2
-      text: "Solar Dach"
-      icon: $mdi_solar_power
+      #text: "Solar Dach"
+      #icon: $mdi_solar_power
       unit: "W"
       precision: 0
       sensor_font: "nunito_36"
@@ -63,8 +63,8 @@ packages:
       row: 0
       column: 2
       column_span: 2
-      text: "Solar Speicher"
-      icon: $mdi_solar_power
+      #text: "Solar Speicher"
+      #icon: $mdi_solar_power
       unit: "W"
       precision: 0
       sensor_font: "nunito_36"
@@ -89,8 +89,8 @@ packages:
       row: 1
       column: 0
       column_span: 2
-      text: "Hausabgabe"
-      icon: $mdi_power_socket_eu
+      #text: "Hausabgabe"
+      #icon: $mdi_power_socket_eu
       unit: "W"
       precision: 0
       sensor_font: "nunito_36"
@@ -114,8 +114,8 @@ packages:
       row: 1
       column: 2
       column_span: 2
-      text: "Abgabelimit"
-      icon: $mdi_power_socket_eu
+      #text: "Abgabelimit"
+      #icon: $mdi_power_socket_eu
       unit: "W"
       precision: 0
       sensor_font: "nunito_36"
@@ -139,7 +139,7 @@ packages:
       row: 1
       column: 4
       column_span: 2
-      text: "Akku"
+      #text: "Akku"
       unit: "%"
       precision: 0
       sensor_font: "nunito_36"
@@ -166,7 +166,7 @@ packages:
       row: 1
       column: 6
       column_span: 2
-      text: "Akku Leistung"
+      #text: "Akku Leistung"
       unit: "W"
       precision: 0
       sensor_font: "nunito_36"
@@ -198,7 +198,7 @@ packages:
       row: 2
       column: 0
       column_span: 2
-      text: "Netz"
+      #text: "Netz"
       unit: "W"
       precision: 0
       sensor_font: "nunito_36"
@@ -227,8 +227,8 @@ packages:
       row: 2
       column: 2
       column_span: 2
-      text: "Verbrauch"
-      icon: $mdi_power_socket_eu
+      #text: "Verbrauch"
+      #icon: $mdi_power_socket_eu
       unit: "W"
       precision: 0
       sensor_font: "nunito_36"

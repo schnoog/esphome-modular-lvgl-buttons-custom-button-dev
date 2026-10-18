@@ -8,8 +8,8 @@
 #   uid:                    unique identifier
 #   row:                    grid row
 #   column:                 grid column
-#   text:                   area name shown at the top (clipped, 80% width)
-#   icon:                   icon glyph shown top left
+#   text:                   area name shown at the top (clipped, 80% width) (optional – hidden if omitted)
+#   icon:                   icon glyph shown top left (optional – hidden if omitted)
 #   row_span:               (default: 1)
 #   column_span:            (default: 1)
 #   page_id:                parent page                             (default: main_page)
@@ -19,8 +19,8 @@
 #   sensor_entity2:         second HA sensor entity
 #   sensor_unit1:           unit appended to value 1                (default: "°C")
 #   sensor_unit2:           unit appended to value 2                (default: "°C")
-#   sensor_1_icon:          icon glyph in front of value 1
-#   sensor_2_icon:          icon glyph in front of value 2
+#   sensor_1_icon:          icon glyph in front of value 1 (optional – hidden if omitted)
+#   sensor_2_icon:          icon glyph in front of value 2 (optional – hidden if omitted)
 #   sensor_font:            font for both values                    (default: text_font)
 #   label_font:             font for the area name                  (default: text_font)
 #
@@ -145,7 +145,8 @@ lvgl:
                 text_font: $icon_font
                 align: ${icon_alignment | default("top_left")}
                 text_color: $icon_off_color
-                text: ${icon}
+                hidden: "${ 'false' if (icon | default('')) != '' else 'true' }"   # no icon → no label
+                text: "${icon | default('')}"
                 y: ${icon_y | default(-10)}
                 x: ${icon_x | default(0)}
             # LABEL
@@ -156,7 +157,8 @@ lvgl:
                 width: 80%
                 text_color: $label_off_color
                 text_font: ${label_font | default(text_font)}
-                text: ${text}
+                hidden: "${ 'false' if (text | default('')) != '' else 'true' }"   # no text → no label
+                text: "${text | default('')}"
                 y: ${label_y | default(-10)}
                 x: ${label_x | default(15)}
             # ICON-T1
@@ -165,7 +167,8 @@ lvgl:
                 text_font: $icon_font
                 align: ${icon_t1_alignment | default("left_mid")}
                 text_color: $icon_off_color
-                text: ${sensor_1_icon}
+                hidden: "${ 'false' if (sensor_1_icon | default('')) != '' else 'true' }"   # no sensor_1_icon → no label
+                text: "${sensor_1_icon | default('')}"
                 x: ${icon_t1_x | default(0)}
                 y: ${icon_t1_y | default(0)}
             # TEMP 1
@@ -183,7 +186,8 @@ lvgl:
                 text_font: $icon_font
                 align: ${icon_t2_alignment | default("bottom_left")}
                 text_color: $icon_off_color
-                text: ${sensor_2_icon}
+                hidden: "${ 'false' if (sensor_2_icon | default('')) != '' else 'true' }"   # no sensor_2_icon → no label
+                text: "${sensor_2_icon | default('')}"
                 y: ${icon_t2_y | default(0)}
                 x: ${icon_t2_x | default(0)}
             # TEMP 2

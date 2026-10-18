@@ -9,8 +9,8 @@
 #   uid:                    unique identifier
 #   row:                    grid row
 #   column:                 grid column
-#   text:                   area name shown at the top (wraps, 70% width)
-#   icon:                   icon glyph shown top left
+#   text:                   area name shown at the top (wraps, 70% width) (optional – hidden if omitted)
+#   icon:                   icon glyph shown top left (optional – hidden if omitted)
 #   row_span:               (default: 1)
 #   column_span:            (default: 1)
 #   page_id:                parent page                             (default: main_page)
@@ -147,7 +147,8 @@ lvgl:
                 text_font: $icon_font
                 align: ${icon_alignment | default("top_left")}
                 text_color: $icon_off_color
-                text: ${icon}
+                hidden: "${ 'false' if (icon | default('')) != '' else 'true' }"   # no icon → no label
+                text: "${icon | default('')}"
                 y: ${icon_y | default(0)}
                 x: ${icon_x | default(0)}
             - label:
@@ -157,7 +158,8 @@ lvgl:
                 width: 70%
                 text_color: $label_off_color
                 text_font: ${label_font | default(text_font)}
-                text: ${text}
+                hidden: "${ 'false' if (text | default('')) != '' else 'true' }"   # no text → no label
+                text: "${text | default('')}"
                 y: ${label_y | default(0)}
                 x: ${label_x | default(0)}
             - label:

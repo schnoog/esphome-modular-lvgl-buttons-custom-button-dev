@@ -375,6 +375,22 @@ lvgl:
 
 # If you want to use other icons add them to the list here
 font:
+  - file: "esphome-modular-lvgl-buttons/assets/fonts/Nunito-SemiBold.ttf"
+    id: nunito_28
+    size: 28
+    bpp: 8
+    glyphsets: ${glyphsets | default("GF_Latin_Kernel")}
+  - file: "esphome-modular-lvgl-buttons/assets/fonts/Nunito-SemiBold.ttf"
+    id: nunito_30
+    size: 30
+    bpp: 8
+    glyphsets: ${glyphsets | default("GF_Latin_Kernel")}
+  - file: "esphome-modular-lvgl-buttons/assets/fonts/Nunito-SemiBold.ttf"
+    id: nunito_32
+    size: 32
+    bpp: 8
+    glyphsets: ${glyphsets | default("GF_Latin_Kernel")}
+
   # http://materialdesignicons.com/cdn/7.4.47/
   - file: 'https://github.com/Templarian/MaterialDesign-Webfont/raw/v7.4.47/fonts/materialdesignicons-webfont.ttf'
     id: mdi_icons_40

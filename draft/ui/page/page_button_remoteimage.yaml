@@ -6,8 +6,8 @@
 #   uid:                    unique identifier (also used as container ID)
 #   row:                    grid row
 #   column:                 grid column
-#   text:                   label shown bottom left
-#   icon:                   icon glyph shown top left
+#   text:                   label shown bottom left (optional – hidden if omitted)
+#   icon:                   icon glyph shown top left (optional – hidden if omitted)
 #   click_page:             page to show on tap                     (default: main_page)
 #   row_span:               (default: 1)
 #   column_span:            (default: 1)
@@ -120,12 +120,14 @@ lvgl:
                       align: top_left
                       id: icon_${uid}
                       text_color: $label_off_color
-                      text: ${icon}
+                      hidden: "${ 'false' if (icon | default('')) != '' else 'true' }"   # no icon → no label
+                      text: "${icon | default('')}"
                   - label:
                       align: bottom_left
                       id: label_${uid}
                       text_color: $label_off_color
-                      text: ${text}
+                      hidden: "${ 'false' if (text | default('')) != '' else 'true' }"   # no text → no label
+                      text: "${text | default('')}"
                 on_short_click:
                     then:
                       lvgl.page.show: ${click_page | default("main_page")}

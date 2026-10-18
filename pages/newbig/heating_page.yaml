@@ -38,7 +38,8 @@ packages:
       entity_id: "select.thermostat_hc1_mode"
       row: 0
       column: 0
-      text: "Modus"
+      show_value: false
+      #text: "Modus"
       sensor_font: "nunito_24"
       page_id: "heating_page"
       bg_grad_dir: VER
@@ -48,17 +49,17 @@ packages:
       image_width: 128
       image_height: 150
       state_1: "auto"
-      state_1_label: "Auto"
+      #state_1_label: "Auto"
       state_1_bg_color: $grad_klima_top
       state_1_bg_grad_color: $grad_klima_bottom
       state_1_image_url: "${img_base}/heizung_automatisch.png"
       state_2: "day"
-      state_2_label: "Manuell"
+      #state_2_label: "Manuell"
       state_2_bg_color: $grad_heizung_top
       state_2_bg_grad_color: $grad_heizung_bottom
       state_2_image_url: "${img_base}/heizung_manuell.png"
       state_3: "night"
-      state_3_label: "Manuell"
+      #state_3_label: "Manuell"
       state_3_bg_color: $grad_heizung_top
       state_3_bg_grad_color: $grad_heizung_bottom
       state_3_image_url: "${img_base}/heizung_manuell.png"
@@ -71,7 +72,8 @@ packages:
       entity_id: "sensor.thermostat_hc1_modetype"
       row: 0
       column: 1
-      text: "Betrieb"
+      show_value: false
+      #text: "Betrieb"
       sensor_font: "nunito_24"
       page_id: "heating_page"
       bg_grad_dir: VER
@@ -81,12 +83,12 @@ packages:
       image_width: 128
       image_height: 150
       state_1: "day"
-      state_1_label: "Tag"
+      #state_1_label: "Tag"
       state_1_bg_color: $grad_tag_top
       state_1_bg_grad_color: $grad_tag_bottom
       state_1_image_url: "${img_base}/heizung_tag_128_150.png"
       state_2: "night"
-      state_2_label: "Nacht"
+      #state_2_label: "Nacht"
       state_2_bg_color: $grad_nacht_top
       state_2_bg_grad_color: $grad_nacht_bottom
       state_2_image_url: "${img_base}/heizung_nacht_128_150.png"
@@ -99,7 +101,8 @@ packages:
       entity_id: "sensor.thermostat_hc1_summermode"
       row: 0
       column: 2
-      text: "Saison"
+      show_value: false
+      #text: "Saison"
       sensor_font: "nunito_24"
       page_id: "heating_page"
       bg_grad_dir: VER
@@ -110,12 +113,12 @@ packages:
       image_width: 128
       image_height: 150
       state_1: "summer"
-      state_1_label: "Sommer"
+      #state_1_label: "Sommer"
       state_1_bg_color: $grad_tag_top
       state_1_bg_grad_color: $grad_tag_bottom
       state_1_image_url: "${img_base}/heizung_sommer_128_150.png"
       state_2: "winter"
-      state_2_label: "Winter"
+      #state_2_label: "Winter"
 
   # Remote — Home Assistant sensor entity
   outdoor_temp_heating_btn: !include
@@ -126,12 +129,12 @@ packages:
       row: 0
       column: 4
       column_span: 2
-      text: "Aussen"
+      #text: "Aussen"
       icon: $mdi_thermometer
       unit: "°C"
       precision: 1
       page_id: "heating_page"
-      sensor_font: "nunito_48"
+      sensor_font: "nunito_36"
       label_font: "nunito_36"
       bg_grad_dir: VER
       bg_color: $grad_klima_top
@@ -140,6 +143,7 @@ packages:
       image_format: PNG
       image_width: 256
       image_height: 150
+      value_alignment: bottom_right
 
   #binary_sensor.boiler_burngas burner
 
@@ -150,7 +154,8 @@ packages:
       entity_id: "binary_sensor.boiler_burngas"
       row: 1
       column: 0
-      text: "Brenner"
+      show_value: false
+      #text: "Brenner"
       icon: $mdi_fire
       sensor_font: "nunito_24"
       page_id: "heating_page"
@@ -158,12 +163,12 @@ packages:
       image_width: 128
       image_height: 150
       state_1: "on"
-      state_1_label: "An"
+      #state_1_label: "An"
       state_1_bg_color: $grad_feuer_top
       state_1_bg_grad_color: $grad_feuer_bottom
       state_1_image_url: "${img_base}/heizung_brenner_an_128_150.png"
       state_2: "off"
-      state_2_label: "Aus"
+      #state_2_label: "Aus"
       state_2_image_url: "${img_base}/heizung_brenner_aus_128_150.png"
 
   img_heating_active_btn: !include
@@ -173,19 +178,20 @@ packages:
       entity_id: "binary_sensor.boiler_heatingactive"
       row: 1
       column: 1
-      text: "Heizkreis"
+      #text: "Heizkreis"
       sensor_font: "nunito_24"
       page_id: "heating_page"
+      show_value: false
       image_format: PNG
       image_width: 128
       image_height: 150
       state_1: "on"
-      state_1_label: "Aktiv"
+      #state_1_label: "Aktiv"
       state_1_bg_color: $grad_heizung_top
       state_1_bg_grad_color: $grad_heizung_bottom
       state_1_image_url: "${img_base}/heizkreis_aktiv.png"
       state_2: "off"
-      state_2_label: "Inaktiv"
+      #state_2_label: "Inaktiv"
       state_2_image_url: "${img_base}/heizkreis_inaktiv.png"
 
 
@@ -199,8 +205,8 @@ packages:
       column: 2
       column_span: 2
       page_id: "heating_page"
-      text: "Vorlauf"
-      icon: $mdi_thermometer
+      #text: "Vorlauf"
+      #icon: $mdi_thermometer
       value_alignment: bottom_right
       unit: "°C"
       precision: 1
@@ -225,8 +231,8 @@ packages:
       column: 4
       column_span: 2
       page_id: "heating_page"
-      text: "Rücklauf"
-      icon: $mdi_thermometer
+      #text: "Rücklauf"
+      #icon: $mdi_thermometer
       value_alignment: bottom_right
       unit: "°C"
       precision: 1
@@ -281,12 +287,12 @@ packages:
       row: 2
       column: 0
       page_id: "heating_page"
-      text: "Druck"
-      icon: $mdi_gauge
+      #text: "Druck"
+      #icon: $mdi_gauge
     #  value_alignment: bottom_right
-      unit: "bar"
+      unit: ""
       precision: 1
-      sensor_font: "nunito_36"
+      sensor_font: "nunito_30"
       bg_grad_dir: VER
       bg_color: $grad_heizung_top
       bg_grad_color: $grad_heizung_bottom
@@ -303,19 +309,20 @@ packages:
       entity_id: "binary_sensor.boiler_tapwateractive"
       row: 2
       column: 1
-      text: "Warmwasser"
+      show_value: false
+      #text: "Warmwasser"
       sensor_font: "nunito_24"
       page_id: "heating_page"
       image_format: PNG
       image_width: 128
       image_height: 150
       state_1: "on"
-      state_1_label: "Aktiv"
+      #state_1_label: "Aktiv"
       state_1_bg_color: $grad_wasser_top
       state_1_bg_grad_color: $grad_wasser_bottom
       state_1_image_url: "${img_base}/heisswasser_aktiv.png"
       state_2: "off"
-      state_2_label: "Inaktiv"
+      #state_2_label: "Inaktiv"
       state_2_image_url: "${img_base}/heisswasser_inaktiv.png"
 
   temp_heating_wasser_btn: !include
@@ -327,8 +334,8 @@ packages:
       column: 2
       column_span: 2
       page_id: "heating_page"
-      text: "Wasservorrat"
-      icon: $mdi_water_boiler
+      #text: "Wasservorrat"
+      #icon: $mdi_water_boiler
       value_alignment: bottom_right
       unit: "°C"
       precision: 1
@@ -353,8 +360,8 @@ packages:
       column: 4
       column_span: 2
       page_id: "heating_page"
-      text: "Boiler"
-      icon: $mdi_water_boiler
+      #text: "Boiler"
+      #icon: $mdi_water_boiler
       value_alignment: bottom_right
       unit: "°C"
       precision: 1
