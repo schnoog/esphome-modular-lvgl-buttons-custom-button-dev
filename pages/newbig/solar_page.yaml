@@ -266,7 +266,7 @@ packages:
 
  # NAV (Menü: Grafiken aktiv)
   page_button_solar_main: !include
-    file: ../../draft/ui/page/page_button_remoteimage.yaml
+    file: ../../draft/ui/page/page_button_localimage.yaml
     vars:
       uid: page_button_solar_main
       row: 3
@@ -276,13 +276,10 @@ packages:
       icon: $mdi_home
       page_id: "solar_page"
       click_page: "main_page"
-      image_url: "${img_base}/tile_home.png"
-      image_format: PNG
-      image_width: 256
-      image_height: 150
+      image: nav_home
 
   page_button_sol_media: !include
-    file: ../../draft/ui/page/page_button_remoteimage.yaml
+    file: ../../draft/ui/page/page_button_localimage.yaml
     vars:
       uid: page_button_sol_media
       row: 3
@@ -292,14 +289,11 @@ packages:
       icon: $mdi_page_next
       page_id: "solar_page"
       click_page: "media_page"
-      image_url: "${img_base}/tile_media.png"
-      image_format: PNG
-      image_width: 256
-      image_height: 150
+      image: nav_media
 
 
   page_button_sol_heating: !include
-    file: ../../draft/ui/page/page_button_remoteimage.yaml
+    file: ../../draft/ui/page/page_button_localimage.yaml
     vars:
       uid: page_button_sol_heating
       row: 3
@@ -309,14 +303,11 @@ packages:
       icon: $mdi_page_next
       page_id: "solar_page"
       click_page: "heating_page"
-      image_url: "${img_base}/tile_heizung.png"
-      image_format: PNG
-      image_width: 256
-      image_height: 150
+      image: nav_heating
 
 
   page_button_sol_cal: !include
-    file: ../../draft/ui/page/page_button_remoteimage.yaml
+    file: ../../draft/ui/page/page_button_localimage.yaml
     vars:
       uid: page_button_sol_cal
       row: 3
@@ -326,10 +317,7 @@ packages:
       icon: $mdi_page_next
       page_id: "solar_page"
       click_page: "cal_page"
-      image_url: "${img_base}/tile_kalender.png"
-      image_format: PNG
-      image_width: 256
-      image_height: 150
+      image: nav_cal
 
 
 # ── Seitendefinition ──

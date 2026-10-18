@@ -245,6 +245,7 @@ packages:
 
   # ── Seiten: je eine Datei unter pages/newbig/ mit Kacheln + Seitendefinition ──
   # Reihenfolge hier = Reihenfolge der Seiten beim Wischen.
+  images:       !include pages/newbig/images.yaml     # lokale Nav-Bilder
   page_main:    !include pages/newbig/main_page.yaml
   page_media:   !include pages/newbig/media_page.yaml
   page_heating: !include pages/newbig/heating_page.yaml

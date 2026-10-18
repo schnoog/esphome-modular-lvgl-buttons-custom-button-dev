@@ -1,0 +1,57 @@
+# =====================================================================
+#  newbig – lokale Bilder für die Navigations-Kacheln
+#  Jedes Bild ist nur einmal in der Firmware und wird von allen
+#  page_button_localimage-Kacheln per id geteilt (kein Download,
+#  sofort nach dem Booten da). Neues Bild → neu bauen + flashen.
+#  Die PNGs haben abgerundete Ecken → alpha_channel.
+# =====================================================================
+
+image:
+  - platform: file
+    id: nav_home
+    file: images/tile_home.png
+    type: RGB565
+    transparency: alpha_channel
+    resize: 256x150
+
+  - platform: file
+    id: nav_home_small              # für 1-spaltige Kacheln (cam_page)
+    file: images/tile_home.png
+    type: RGB565
+    transparency: alpha_channel
+    resize: 128x150
+
+  - platform: file
+    id: nav_media
+    file: images/tile_media.png
+    type: RGB565
+    transparency: alpha_channel
+    resize: 256x150
+
+  - platform: file
+    id: nav_heating
+    file: images/tile_heizung.png
+    type: RGB565
+    transparency: alpha_channel
+    resize: 256x150
+
+  - platform: file
+    id: nav_solar
+    file: images/tile_solar.png
+    type: RGB565
+    transparency: alpha_channel
+    resize: 256x150
+
+  - platform: file
+    id: nav_cal
+    file: images/tile_kalender.png
+    type: RGB565
+    transparency: alpha_channel
+    resize: 256x150
+
+  - platform: file
+    id: nav_camera
+    file: images/kamera.png
+    type: RGB565
+    transparency: alpha_channel
+    resize: 128x150

@@ -1,0 +1,105 @@
+# Page button tile with local image — navigates to another LVGL page on tap.
+# The background image is a local image (image: platform: file) defined once
+# elsewhere and only referenced here by its id, so many tiles can share the
+# same picture without extra RAM, downloads or online_image components.
+# Icon and label are drawn on top of it.
+#
+# vars:
+#   uid:                    unique identifier (also used as container ID)
+#   row:                    grid row
+#   column:                 grid column
+#   image:                  id of a local image, e.g. nav_media (required)
+#   text:                   label shown bottom left (optional – hidden if omitted)
+#   icon:                   icon glyph shown top left (optional – hidden if omitted)
+#   click_page:             page to show on tap                     (default: main_page)
+#   row_span:               (default: 1)
+#   column_span:            (default: 1)
+#   page_id:                parent page                             (default: main_page)
+#   image_alignment:        image alignment inside the tile         (default: center)
+#   image_x:                image x offset                          (default: 0)
+#   image_y:                image y offset                          (default: 0)
+#   image_opa:              image opacity. 0%-100% or TRANSP/COVER  (default: COVER)
+#
+#   -- background: plain colour or gradient, visible where the image is transparent --
+#   bg_color:               main colour                             (default: $button_off_color)
+#   bg_opa:                 0%-100% or TRANSP/COVER                 (default: COVER)
+#   bg_grad_dir:            NONE | VER | HOR                        (default: NONE = plain colour)
+#   bg_grad_color:          second gradient colour                  (default: bg_color)
+#   bg_main_stop:           0..255 where bg_color starts to fade    (default: 0)
+#   bg_grad_stop:           0..255 where bg_grad_color is reached   (default: 255)
+#
+# requires:
+#   $icon_font, $label_off_color (theme), the image given in `image`
+#
+# example:
+#   image:
+#     - platform: file
+#       id: nav_media
+#       file: images/tile_media.png
+#       type: RGB565
+#       resize: 256x150
+#
+#   page_button_main_media: !include
+#     file: draft/ui/page/page_button_localimage.yaml
+#     vars:
+#       uid: page_button_main_media
+#       row: 3
+#       column: 0
+#       column_span: 2
+#       text: "Media"
+#       icon: $mdi_page_next
+#       image: nav_media
+#       click_page: media_page
+#
+# notes:
+#   - The image is part of the firmware: it shows right after boot (no network
+#     needed), but changing it needs a rebuild + flash.
+#   - Size the image to the tile in the image: definition (resize:); the tile
+#     shows it as is, centred.
+
+lvgl:
+  pages:
+    - id: !extend ${page_id | default("main_page")}
+      widgets:
+        - container:
+            id: ${uid}
+            grid_cell_row_pos: ${row}
+            grid_cell_column_pos: ${column}
+            grid_cell_row_span: ${row_span | default(1)}
+            grid_cell_column_span: ${column_span | default(1)}
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            widgets:
+            - button:
+                id: button_${uid}
+                bg_opa: ${bg_opa | default("COVER")}
+                bg_color: ${bg_color | default(button_off_color)}
+                bg_grad_color: ${bg_grad_color | default(bg_color | default(button_off_color))}
+                bg_grad_dir: ${bg_grad_dir | default("NONE")}
+                bg_main_stop: ${bg_main_stop | default(0)}
+                bg_grad_stop: ${bg_grad_stop | default(255)}
+                clip_corner: true
+                widgets:
+                  - image:
+                      id: img_${uid}
+                      src: ${image}
+                      align: ${image_alignment | default("center")}
+                      opa: ${image_opa | default("COVER")}
+                      y: ${image_y | default(0)}
+                      x: ${image_x | default(0)}
+                  - label:
+                      text_font: $icon_font
+                      align: top_left
+                      id: icon_${uid}
+                      text_color: $label_off_color
+                      hidden: "${ 'false' if (icon | default('')) != '' else 'true' }"   # no icon → no label
+                      text: "${icon | default('')}"
+                  - label:
+                      align: bottom_left
+                      id: label_${uid}
+                      text_color: $label_off_color
+                      hidden: "${ 'false' if (text | default('')) != '' else 'true' }"   # no text → no label
+                      text: "${text | default('')}"
+                on_short_click:
+                    then:
+                      lvgl.page.show: ${click_page | default("main_page")}

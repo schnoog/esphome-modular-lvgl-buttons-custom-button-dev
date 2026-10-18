@@ -16,7 +16,7 @@ packages:
 # ##PAGE
 
   page_button_camshow: !include
-    file: ../../draft/ui/page/page_button_remoteimage.yaml
+    file: ../../draft/ui/page/page_button_localimage.yaml
     vars:
       uid: page_button_camshow
       row: 0
@@ -25,13 +25,10 @@ packages:
       icon: ""
       page_id: "cam_page"
       click_page: "cam_page"
-      image_url: "${img_base}/kamera.png"
-      image_format: PNG
-      image_width: 128
-      image_height: 150
+      image: nav_camera
 
   page_button_cam_main: !include
-    file: ../../draft/ui/page/page_button_remoteimage.yaml
+    file: ../../draft/ui/page/page_button_localimage.yaml
     vars:
       uid: page_button_cam_main
       row: 3
@@ -41,10 +38,7 @@ packages:
       icon: $mdi_home
       page_id: "cam_page"
       click_page: "main_page"
-      image_url: "${img_base}/tile_home.png"
-      image_format: PNG
-      image_width: 128
-      image_height: 150
+      image: nav_home_small
 
 
   cam_page_camview: !include

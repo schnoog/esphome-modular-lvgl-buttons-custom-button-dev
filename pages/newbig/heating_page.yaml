@@ -377,7 +377,7 @@ packages:
       icon_alignment: bottom_mid
  #NAV (Menü: Grafiken aktiv)
   page_button_heating_main: !include
-    file: ../../draft/ui/page/page_button_remoteimage.yaml
+    file: ../../draft/ui/page/page_button_localimage.yaml
     vars:
       uid: page_button_heating_main
       row: 3
@@ -387,13 +387,10 @@ packages:
       icon: $mdi_home
       page_id: "heating_page"
       click_page: "main_page"
-      image_url: "${img_base}/tile_home.png"
-      image_format: PNG
-      image_width: 256
-      image_height: 150
+      image: nav_home
 
   page_button_heating_media: !include
-    file: ../../draft/ui/page/page_button_remoteimage.yaml
+    file: ../../draft/ui/page/page_button_localimage.yaml
     vars:
       uid: page_button_heating_media
       row: 3
@@ -403,14 +400,11 @@ packages:
       icon: $mdi_page_next
       page_id: "heating_page"
       click_page: "media_page"
-      image_url: "${img_base}/tile_media.png"
-      image_format: PNG
-      image_width: 256
-      image_height: 150
+      image: nav_media
 
 
   page_button_heating_solar: !include
-    file: ../../draft/ui/page/page_button_remoteimage.yaml
+    file: ../../draft/ui/page/page_button_localimage.yaml
     vars:
       uid: page_button_heating_solar
       row: 3
@@ -420,14 +414,11 @@ packages:
       icon: $mdi_page_next
       page_id: "heating_page"
       click_page: "solar_page"
-      image_url: "${img_base}/tile_solar.png"
-      image_format: PNG
-      image_width: 256
-      image_height: 150
+      image: nav_solar
 
 
   page_button_heating_cal: !include
-    file: ../../draft/ui/page/page_button_remoteimage.yaml
+    file: ../../draft/ui/page/page_button_localimage.yaml
     vars:
       uid: page_button_heating_cal
       row: 3
@@ -437,10 +428,7 @@ packages:
       icon: $mdi_page_next
       page_id: "heating_page"
       click_page: "cal_page"
-      image_url: "${img_base}/tile_kalender.png"
-      image_format: PNG
-      image_width: 256
-      image_height: 150
+      image: nav_cal
 
 
 # ── Seitendefinition ──
