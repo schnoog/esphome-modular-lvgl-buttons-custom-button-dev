@@ -1,0 +1,211 @@
+# =====================================================================
+#  Weather forecast – backend (data only, no widgets)
+#
+#  Fetches the daily AND the hourly forecast of a Home Assistant weather
+#  entity (e.g. met.no: weather.forecast_home) directly with the action
+#  weather.get_forecasts. Home Assistant reduces the answer to compact
+#  JSON (response_template), so no template sensor is needed in HA.
+#
+#  Views that show the data hook into ${uid}_updated:
+#    forecast_tile.yaml  – tile with the next days (tap → weather page)
+#    forecast_page.yaml  – page with the hourly forecast per day
+#  Both are optional and use the same uid as this backend.
+#
+#  packages:
+#    weather: !include
+#      file: draft/ui/weather/forecast_backend.yaml
+#      vars:
+#        uid: wx
+#        weather_entity: weather.forecast_home
+#
+#  vars:
+#    uid:               prefix shared with tile/page              (default: wx)
+#    weather_entity:    HA weather entity                         (default: weather.forecast_home)
+#    update_interval:   how often the forecast is fetched         (default: 30min)
+#    days_max:          daily entries kept                        (default: 7)
+#    hours_max:         hourly entries kept                       (default: 96)
+#    icon_size:         size of the weather icon font in px       (default: 40)
+#
+#  requires:
+#    "Allow the device to perform Home Assistant actions" in the HA ESPHome
+#    integration options (weather.get_forecasts is an action call).
+#
+#  Data for the views (all prefixed ${uid}_):
+#    daily   std::vector<std::string>  "YYYY-MM-DD|weekday 0=Mon|condition|max|min|precip"
+#    hourly  std::vector<std::string>  "YYYY-MM-DD|hour|condition|temp|precip|wind"
+#    unit_temp / unit_precip / unit_wind   units of the weather entity
+#    sel_day   index into daily that the weather page shows
+#    icons     font with the weather glyphs; icon_for(condition) → glyph
+# =====================================================================
+
+defaults:
+  uid: wx
+  weather_entity: weather.forecast_home
+  update_interval: 30min
+  days_max: 7
+  hours_max: 96
+  icon_size: 40
+
+
+globals:
+  - id: ${uid}_daily
+    type: std::vector<std::string>
+  - id: ${uid}_hourly
+    type: std::vector<std::string>
+  - id: ${uid}_unit_temp
+    type: std::string
+    initial_value: '"°C"'
+  - id: ${uid}_unit_precip
+    type: std::string
+    initial_value: '"mm"'
+  - id: ${uid}_unit_wind
+    type: std::string
+    initial_value: '"km/h"'
+  - id: ${uid}_sel_day                 # day shown on the weather page
+    type: int
+    initial_value: '0'
+  # HA condition → MDI glyph (met.no reports "clear-night" for clear nights)
+  - id: ${uid}_icon_map
+    type: std::map<std::string, std::string>
+    initial_value: |-
+      {
+        {"clear-night",     "$mdi_weather_night"},
+        {"cloudy",          "$mdi_weather_cloudy"},
+        {"exceptional",     "$mdi_alert_circle_outline"},
+        {"fog",             "$mdi_weather_fog"},
+        {"hail",            "$mdi_weather_hail"},
+        {"lightning",       "$mdi_weather_lightning"},
+        {"lightning-rainy", "$mdi_weather_lightning_rainy"},
+        {"partlycloudy",    "$mdi_weather_partly_cloudy"},
+        {"pouring",         "$mdi_weather_pouring"},
+        {"rainy",           "$mdi_weather_rainy"},
+        {"snowy",           "$mdi_weather_snowy"},
+        {"snowy-rainy",     "$mdi_weather_snowy_rainy"},
+        {"sunny",           "$mdi_weather_sunny"},
+        {"windy",           "$mdi_weather_windy"},
+        {"windy-variant",   "$mdi_weather_windy_variant"},
+      }
+
+
+font:
+  - file: 'https://github.com/Templarian/MaterialDesign-Webfont/raw/v7.4.47/fonts/materialdesignicons-webfont.ttf'
+    id: ${uid}_icons
+    size: ${icon_size}
+    bpp: 8
+    glyphs: [
+      $mdi_weather_night,
+      $mdi_weather_cloudy,
+      $mdi_alert_circle_outline,
+      $mdi_weather_fog,
+      $mdi_weather_hail,
+      $mdi_weather_lightning,
+      $mdi_weather_lightning_rainy,
+      $mdi_weather_partly_cloudy,
+      $mdi_weather_pouring,
+      $mdi_weather_rainy,
+      $mdi_weather_snowy,
+      $mdi_weather_snowy_rainy,
+      $mdi_weather_sunny,
+      $mdi_weather_windy,
+      $mdi_weather_windy_variant,
+    ]
+
+
+# ── When to fetch: after HA connects, periodically ───────────────────────────
+api:
+  on_client_connected:
+    - if:
+        condition:
+          lambda: 'return client_info.find("Home Assistant ") == 0;'
+        then:
+          - delay: 5s
+          - script.execute: ${uid}_fetch
+
+interval:
+  - interval: ${update_interval}
+    then:
+      - script.execute: ${uid}_fetch
+
+
+script:
+  # Views !extend this script to redraw themselves after new data arrived
+  - id: ${uid}_updated
+    mode: queued
+    then:
+      - logger.log:
+          level: DEBUG
+          tag: weather
+          format: "forecast: %d days, %d hours"
+          args: ['(int) id(${uid}_daily).size()', '(int) id(${uid}_hourly).size()']
+
+  - id: ${uid}_fetch
+    mode: single
+    then:
+      # ── daily ──
+      - homeassistant.action:
+          action: weather.get_forecasts
+          data:
+            type: daily
+            entity_id: ${weather_entity}
+          capture_response: true
+          response_template: >-
+            {% set e = '${weather_entity}' %}
+            {% set ns = namespace(o=[]) %}
+            {% for f in response[e].forecast[:${days_max}] %}
+            {% set t = as_local(as_datetime(f.datetime)) %}
+            {% set ns.o = ns.o + [t.strftime('%Y-%m-%d') ~ '|' ~ t.weekday() ~ '|' ~ (f.condition or 'unknown')
+               ~ '|' ~ (f.temperature | default(0, true) | round(0) | int)
+               ~ '|' ~ (f.templow | default(f.temperature, true) | default(0, true) | round(0) | int)
+               ~ '|' ~ (f.precipitation | default(0, true) | round(1))] %}
+            {% endfor %}
+            {{ {'d': ns.o,
+                'ut': state_attr(e, 'temperature_unit') or '°C',
+                'up': state_attr(e, 'precipitation_unit') or 'mm',
+                'uw': state_attr(e, 'wind_speed_unit') or 'km/h'} | tojson }}
+          on_success:
+            - lambda: |-
+                JsonObjectConst r = response["response"];
+                auto &daily = id(${uid}_daily);
+                daily.clear();
+                for (JsonVariantConst v : r["d"].as<JsonArrayConst>())
+                  daily.push_back(v.as<std::string>());
+                if (r["ut"].is<const char *>()) id(${uid}_unit_temp) = r["ut"].as<std::string>();
+                if (r["up"].is<const char *>()) id(${uid}_unit_precip) = r["up"].as<std::string>();
+                if (r["uw"].is<const char *>()) id(${uid}_unit_wind) = r["uw"].as<std::string>();
+                if (id(${uid}_sel_day) >= (int) daily.size()) id(${uid}_sel_day) = 0;
+            - script.execute: ${uid}_updated
+          on_error:
+            - logger.log:
+                level: WARN
+                tag: weather
+                format: "daily forecast: request failed"
+      # ── hourly ──
+      - homeassistant.action:
+          action: weather.get_forecasts
+          data:
+            type: hourly
+            entity_id: ${weather_entity}
+          capture_response: true
+          response_template: >-
+            {% set e = '${weather_entity}' %}
+            {% set ns = namespace(o=[]) %}
+            {% for f in response[e].forecast[:${hours_max}] %}
+            {% set t = as_local(as_datetime(f.datetime)) %}
+            {% set ns.o = ns.o + [t.strftime('%Y-%m-%d') ~ '|' ~ t.hour ~ '|' ~ (f.condition or 'unknown')
+               ~ '|' ~ (f.temperature | default(0, true) | round(0) | int)
+               ~ '|' ~ (f.precipitation | default(0, true) | round(1))
+               ~ '|' ~ (f.wind_speed | default(0, true) | round(0) | int)] %}
+            {% endfor %}
+            {{ {'h': ns.o} | tojson }}
+          on_success:
+            - lambda: |-
+                auto &hourly = id(${uid}_hourly);
+                hourly.clear();
+                for (JsonVariantConst v : response["response"]["h"].as<JsonArrayConst>())
+                  hourly.push_back(v.as<std::string>());
+            - script.execute: ${uid}_updated
+          on_error:
+            - logger.log:
+                level: WARN
+                tag: weather
+                format: "hourly forecast: request failed"

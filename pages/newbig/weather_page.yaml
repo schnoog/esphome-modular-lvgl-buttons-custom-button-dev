@@ -1,0 +1,32 @@
+# =====================================================================
+#  newbig – Seite "weather_page" (Wetter: Stundenvorhersage pro Tag)
+#  Eingebunden in newbig.yaml unter packages: (Reihenfolge = Wisch-Reihenfolge).
+#  Daten: draft/ui/weather/forecast_backend.yaml (uid: wx, in newbig.yaml).
+#  Geöffnet über die Wetter-Kachel auf main_page (Tipp auf einen Tag).
+# =====================================================================
+
+packages:
+  weather_page_content: !include
+    file: ../../draft/ui/weather/forecast_page.yaml
+    vars:
+      uid: wx
+      page_id: weather_page
+      weekday_names: ["Montag", "Dienstag", "Mittwoch", "Donnerstag",
+                      "Freitag", "Samstag", "Sonntag"]
+      date_format: "{weekday}, {day}."
+      today_label: "Heute"
+      tomorrow_label: "Morgen"
+      no_hourly_text: "Für diesen Tag gibt es keine Stundenwerte"
+      home_page: main_page
+      home_label: "Start"
+
+
+# ── Seitendefinition ──
+lvgl:
+  pages:
+    - id: weather_page
+      styles: page_style
+      bg_color: 0x18213A      # Fallback
+      bg_opa: COVER
+      bg_grad: page_bg_grad
+      <<: !include ../../esphome-modular-lvgl-buttons/common/swipe_navigation.yaml

@@ -343,6 +343,24 @@ packages:
       image: nav_cal
 
 
+  # Wettervorhersage: 3 Tage, Tipp auf einen Tag öffnet weather_page
+  weather_tile: !include
+    file: ../../draft/ui/weather/forecast_tile.yaml
+    vars:
+      uid: wx
+      row: 2
+      column: 4
+      column_span: 2
+      page_id: "main_page"
+      click_page: weather_page
+      days: 3
+      weekday_short: ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+      today_short: "Heute"
+      bg_grad_dir: VER
+      bg_color: $grad_klima_top
+      bg_grad_color: $grad_klima_bottom
+
+
 # ── Seitendefinition ──
 lvgl:
   pages:

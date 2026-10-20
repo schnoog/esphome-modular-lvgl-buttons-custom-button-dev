@@ -1,0 +1,358 @@
+# =====================================================================
+#  Weather forecast – tile with the next days
+#  Each column: day, condition icon, max / min temperature and – only if
+#  there is any – precipitation. Tapping a day opens the weather page
+#  (forecast_page.yaml) on exactly that day.
+#  Needs forecast_backend.yaml with the same uid.
+#
+#  packages:
+#    weather_tile: !include
+#      file: draft/ui/weather/forecast_tile.yaml
+#      vars:
+#        uid: wx
+#        row: 2
+#        column: 4
+#        column_span: 2
+#        days: 3
+#        weekday_short: ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+#        today_short: "Heute"
+#
+#  vars:
+#    uid:               same as the backend                       (default: wx)
+#    row, column:       grid position
+#    row_span:          (default: 1)          column_span: (default: 2)
+#    page_id:           page of the tile                          (default: main_page)
+#    click_page:        weather page opened on tap                (default: weather_page)
+#    days:              number of day columns, 1..5               (default: 3)
+#    weekday_short:     7 short names, starting with Monday       (default: Mon … Sun)
+#    today_short:       name of the first column ("" = weekday)   (default: "Today")
+#    day_font:          (default: nunito_18)   temp_font:   (default: nunito_18)
+#    precip_font:       (default: nunito_14)
+#    day_color:         (default: $label_off_color)
+#    temp_color:        (default: $label_on_color)
+#    precip_color:      (default: "0x64B5F6")
+#    icon_color:        (default: $label_on_color)
+#    pad_all:           inner padding                             (default: 6)
+#
+#    -- background --
+#    bg_color:          (default: $button_off_color)   bg_opa: (default: COVER)
+#    bg_grad_dir:       NONE | VER | HOR (default: NONE)   bg_grad_color: (default: bg_color)
+#    bg_main_stop / bg_grad_stop: (default: 0 / 255)
+#
+#  notes:
+#    - "--" until the first forecast arrives; days beyond the forecast hide.
+#    - Precipitation is shown with one decimal in the unit of the entity.
+# =====================================================================
+
+defaults:
+  uid: wx
+  page_id: main_page
+  click_page: weather_page
+  days: 3
+  weekday_short: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+  today_short: "Today"
+
+
+script:
+  - id: !extend ${uid}_updated
+    then:
+      - script.execute: ${uid}_render_tile
+
+  - id: ${uid}_render_tile
+    mode: queued
+    then:
+      - lambda: |-
+          static const char *const WD[7] = {"${ weekday_short | join('", "') }"};
+          lv_obj_t *col[5]  = {id(${uid}_tc0), id(${uid}_tc1), id(${uid}_tc2), id(${uid}_tc3), id(${uid}_tc4)};
+          lv_obj_t *day[5]  = {id(${uid}_td0), id(${uid}_td1), id(${uid}_td2), id(${uid}_td3), id(${uid}_td4)};
+          lv_obj_t *ico[5]  = {id(${uid}_ti0), id(${uid}_ti1), id(${uid}_ti2), id(${uid}_ti3), id(${uid}_ti4)};
+          lv_obj_t *tmp[5]  = {id(${uid}_tt0), id(${uid}_tt1), id(${uid}_tt2), id(${uid}_tt3), id(${uid}_tt4)};
+          lv_obj_t *prc[5]  = {id(${uid}_tp0), id(${uid}_tp1), id(${uid}_tp2), id(${uid}_tp3), id(${uid}_tp4)};
+          const auto &daily = id(${uid}_daily);
+          const int n = std::min<int>(${days}, 5);
+          for (int i = 0; i < 5; i++) {
+            if (i >= n || i >= (int) daily.size()) {
+              if (i < n && daily.empty()) continue;          // keep "--" until data arrives
+              lv_obj_add_flag(col[i], LV_OBJ_FLAG_HIDDEN);
+              continue;
+            }
+            lv_obj_remove_flag(col[i], LV_OBJ_FLAG_HIDDEN);
+            // "date|weekday|condition|max|min|precip"
+            std::vector<std::string> f;
+            size_t s = 0;
+            const std::string &line = daily[i];
+            for (size_t p; (p = line.find('|', s)) != std::string::npos; s = p + 1) f.push_back(line.substr(s, p - s));
+            f.push_back(line.substr(s));
+            if (f.size() < 6) continue;
+            const int wd = atoi(f[1].c_str());
+            const char *today = "${today_short}";
+            lv_label_set_text(day[i], (i == 0 && *today) ? today : WD[(wd % 7 + 7) % 7]);
+            auto it = id(${uid}_icon_map).find(f[2]);
+            lv_label_set_text(ico[i], it != id(${uid}_icon_map).end() ? it->second.c_str() : "$mdi_alert_circle_outline");
+            lv_label_set_text_fmt(tmp[i], "%s° / %s°", f[3].c_str(), f[4].c_str());
+            const float pr = atof(f[5].c_str());
+            if (pr > 0.04f) {
+              lv_label_set_text_fmt(prc[i], "%.1f %s", pr, id(${uid}_unit_precip).c_str());
+              lv_obj_remove_flag(prc[i], LV_OBJ_FLAG_HIDDEN);
+            } else {
+              lv_obj_add_flag(prc[i], LV_OBJ_FLAG_HIDDEN);
+            }
+          }
+
+
+lvgl:
+  pages:
+  - id: !extend ${page_id}
+    widgets:
+    - container:
+        id: ${uid}_tile
+        grid_cell_row_pos: ${row}
+        grid_cell_column_pos: ${column}
+        grid_cell_row_span: ${row_span | default(1)}
+        grid_cell_column_span: ${column_span | default(2)}
+        grid_cell_x_align: stretch
+        grid_cell_y_align: stretch
+        widgets:
+        - button:
+            id: button_${uid}_tile
+            clickable: false
+            clip_corner: true
+            pad_all: ${pad_all | default(6)}
+            bg_opa: ${bg_opa | default("COVER")}
+            bg_color: ${bg_color | default(button_off_color)}
+            bg_grad_color: ${bg_grad_color | default(bg_color | default(button_off_color))}
+            bg_grad_dir: ${bg_grad_dir | default("NONE")}
+            bg_main_stop: ${bg_main_stop | default(0)}
+            bg_grad_stop: ${bg_grad_stop | default(255)}
+            layout:
+              type: flex
+              flex_flow: ROW
+              flex_align_main: SPACE_EVENLY
+              flex_align_cross: CENTER
+              pad_column: 2
+            widgets:
+            # ── Day 0 ──
+            - obj:
+                id: ${uid}_tc0
+                hidden: ${ 'true' if 0 >= (days | int) else 'false' }
+                flex_grow: 1
+                height: 100%
+                bg_opa: TRANSP
+                border_width: 0
+                pad_all: 0
+                scrollable: false
+                layout:
+                  type: flex
+                  flex_flow: COLUMN
+                  flex_align_main: SPACE_EVENLY
+                  flex_align_cross: CENTER
+                  pad_row: 0
+                pressed:
+                  bg_opa: 20%
+                  bg_color: 0xFFFFFF
+                  radius: 8
+                on_click:
+                  - lambda: id(${uid}_sel_day) = 0;
+                  - lvgl.page.show: ${click_page}
+                widgets:
+                  - label:
+                      id: ${uid}_td0
+                      text: "--"
+                      text_font: ${day_font | default("nunito_18")}
+                      text_color: ${day_color | default(label_off_color)}
+                  - label:
+                      id: ${uid}_ti0
+                      text: ""
+                      text_font: ${uid}_icons
+                      text_color: ${icon_color | default(label_on_color)}
+                  - label:
+                      id: ${uid}_tt0
+                      text: "--"
+                      text_font: ${temp_font | default("nunito_18")}
+                      text_color: ${temp_color | default(label_on_color)}
+                  - label:
+                      id: ${uid}_tp0
+                      hidden: true
+                      text: ""
+                      text_font: ${precip_font | default("nunito_14")}
+                      text_color: ${precip_color | default("0x64B5F6")}
+            # ── Day 1 ──
+            - obj:
+                id: ${uid}_tc1
+                hidden: ${ 'true' if 1 >= (days | int) else 'false' }
+                flex_grow: 1
+                height: 100%
+                bg_opa: TRANSP
+                border_width: 0
+                pad_all: 0
+                scrollable: false
+                layout:
+                  type: flex
+                  flex_flow: COLUMN
+                  flex_align_main: SPACE_EVENLY
+                  flex_align_cross: CENTER
+                  pad_row: 0
+                pressed:
+                  bg_opa: 20%
+                  bg_color: 0xFFFFFF
+                  radius: 8
+                on_click:
+                  - lambda: id(${uid}_sel_day) = 1;
+                  - lvgl.page.show: ${click_page}
+                widgets:
+                  - label:
+                      id: ${uid}_td1
+                      text: "--"
+                      text_font: ${day_font | default("nunito_18")}
+                      text_color: ${day_color | default(label_off_color)}
+                  - label:
+                      id: ${uid}_ti1
+                      text: ""
+                      text_font: ${uid}_icons
+                      text_color: ${icon_color | default(label_on_color)}
+                  - label:
+                      id: ${uid}_tt1
+                      text: "--"
+                      text_font: ${temp_font | default("nunito_18")}
+                      text_color: ${temp_color | default(label_on_color)}
+                  - label:
+                      id: ${uid}_tp1
+                      hidden: true
+                      text: ""
+                      text_font: ${precip_font | default("nunito_14")}
+                      text_color: ${precip_color | default("0x64B5F6")}
+            # ── Day 2 ──
+            - obj:
+                id: ${uid}_tc2
+                hidden: ${ 'true' if 2 >= (days | int) else 'false' }
+                flex_grow: 1
+                height: 100%
+                bg_opa: TRANSP
+                border_width: 0
+                pad_all: 0
+                scrollable: false
+                layout:
+                  type: flex
+                  flex_flow: COLUMN
+                  flex_align_main: SPACE_EVENLY
+                  flex_align_cross: CENTER
+                  pad_row: 0
+                pressed:
+                  bg_opa: 20%
+                  bg_color: 0xFFFFFF
+                  radius: 8
+                on_click:
+                  - lambda: id(${uid}_sel_day) = 2;
+                  - lvgl.page.show: ${click_page}
+                widgets:
+                  - label:
+                      id: ${uid}_td2
+                      text: "--"
+                      text_font: ${day_font | default("nunito_18")}
+                      text_color: ${day_color | default(label_off_color)}
+                  - label:
+                      id: ${uid}_ti2
+                      text: ""
+                      text_font: ${uid}_icons
+                      text_color: ${icon_color | default(label_on_color)}
+                  - label:
+                      id: ${uid}_tt2
+                      text: "--"
+                      text_font: ${temp_font | default("nunito_18")}
+                      text_color: ${temp_color | default(label_on_color)}
+                  - label:
+                      id: ${uid}_tp2
+                      hidden: true
+                      text: ""
+                      text_font: ${precip_font | default("nunito_14")}
+                      text_color: ${precip_color | default("0x64B5F6")}
+            # ── Day 3 ──
+            - obj:
+                id: ${uid}_tc3
+                hidden: ${ 'true' if 3 >= (days | int) else 'false' }
+                flex_grow: 1
+                height: 100%
+                bg_opa: TRANSP
+                border_width: 0
+                pad_all: 0
+                scrollable: false
+                layout:
+                  type: flex
+                  flex_flow: COLUMN
+                  flex_align_main: SPACE_EVENLY
+                  flex_align_cross: CENTER
+                  pad_row: 0
+                pressed:
+                  bg_opa: 20%
+                  bg_color: 0xFFFFFF
+                  radius: 8
+                on_click:
+                  - lambda: id(${uid}_sel_day) = 3;
+                  - lvgl.page.show: ${click_page}
+                widgets:
+                  - label:
+                      id: ${uid}_td3
+                      text: "--"
+                      text_font: ${day_font | default("nunito_18")}
+                      text_color: ${day_color | default(label_off_color)}
+                  - label:
+                      id: ${uid}_ti3
+                      text: ""
+                      text_font: ${uid}_icons
+                      text_color: ${icon_color | default(label_on_color)}
+                  - label:
+                      id: ${uid}_tt3
+                      text: "--"
+                      text_font: ${temp_font | default("nunito_18")}
+                      text_color: ${temp_color | default(label_on_color)}
+                  - label:
+                      id: ${uid}_tp3
+                      hidden: true
+                      text: ""
+                      text_font: ${precip_font | default("nunito_14")}
+                      text_color: ${precip_color | default("0x64B5F6")}
+            # ── Day 4 ──
+            - obj:
+                id: ${uid}_tc4
+                hidden: ${ 'true' if 4 >= (days | int) else 'false' }
+                flex_grow: 1
+                height: 100%
+                bg_opa: TRANSP
+                border_width: 0
+                pad_all: 0
+                scrollable: false
+                layout:
+                  type: flex
+                  flex_flow: COLUMN
+                  flex_align_main: SPACE_EVENLY
+                  flex_align_cross: CENTER
+                  pad_row: 0
+                pressed:
+                  bg_opa: 20%
+                  bg_color: 0xFFFFFF
+                  radius: 8
+                on_click:
+                  - lambda: id(${uid}_sel_day) = 4;
+                  - lvgl.page.show: ${click_page}
+                widgets:
+                  - label:
+                      id: ${uid}_td4
+                      text: "--"
+                      text_font: ${day_font | default("nunito_18")}
+                      text_color: ${day_color | default(label_off_color)}
+                  - label:
+                      id: ${uid}_ti4
+                      text: ""
+                      text_font: ${uid}_icons
+                      text_color: ${icon_color | default(label_on_color)}
+                  - label:
+                      id: ${uid}_tt4
+                      text: "--"
+                      text_font: ${temp_font | default("nunito_18")}
+                      text_color: ${temp_color | default(label_on_color)}
+                  - label:
+                      id: ${uid}_tp4
+                      hidden: true
+                      text: ""
+                      text_font: ${precip_font | default("nunito_14")}
+                      text_color: ${precip_color | default("0x64B5F6")}

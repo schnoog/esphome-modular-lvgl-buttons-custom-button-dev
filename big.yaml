@@ -246,11 +246,18 @@ packages:
   # ── Seiten: je eine Datei unter pages/newbig/ mit Kacheln + Seitendefinition ──
   # Reihenfolge hier = Reihenfolge der Seiten beim Wischen.
   images:       !include pages/newbig/images.yaml     # lokale Nav-Bilder  
+  # Wettervorhersage (met.no) – Daten für Wetter-Kachel und Wetterseite
+  weather:      !include
+    file: draft/ui/weather/forecast_backend.yaml
+    vars:
+      uid: wx
+      weather_entity: weather.forecast_home
   page_main:    !include pages/newbig/main_page.yaml
   page_media:   !include pages/newbig/media_page.yaml
   page_heating: !include pages/newbig/heating_page.yaml
   page_solar:   !include pages/newbig/solar_page.yaml
   page_cal:     !include pages/newbig/cal_page.yaml
+  page_weather: !include pages/newbig/weather_page.yaml
   page_cam:     !include pages/newbig/cam_page.yaml
 
 switch:
