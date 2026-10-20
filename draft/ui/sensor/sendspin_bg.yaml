@@ -1,0 +1,327 @@
+# ══════════════════════════════════════════════════════════════════════════════
+#  Sendspin Now-Playing Tile – cover as background
+#  Like sendspin.yaml (title, artist and album of the current Sendspin group,
+#  e.g. Music Assistant), but the album cover fills the whole tile and the
+#  three text lines sit on semi-transparent, coloured bands so they stay
+#  readable on any cover.
+# ══════════════════════════════════════════════════════════════════════════════
+#
+#  Usage:
+#    packages:
+#      now_playing: !include
+#        file: draft/ui/sensor/sendspin_bg.yaml
+#        vars:
+#          uid: np
+#          page_id: main_page
+#          row: 0
+#          column: 4
+#          column_span: 2
+#
+#  Required vars:
+#    uid                  Unique prefix for all IDs of this tile
+#    row, column          Grid position on the page
+#
+#  Optional vars:         (default)
+#    page_id              main_page      Page the tile is added to
+#    row_span             1
+#    column_span          1
+#
+#    -- cover (background) --
+#    image_width          256            Cover size in px, requested from the server.
+#    image_height         256            Square covers: use the tile WIDTH for both,
+#                                        the rounded tile clips the overflow.
+#    image_alignment      center
+#    image_x, image_y     0, 0           Cover offset
+#    cover_opa            COVER          Cover opacity; e.g. 70% lets the (dark)
+#                                        background below darken the cover
+#    fallback_image       playing.png    Shown when nothing is playing (file or URL)
+#    fade_duration        2s             Crossfade between covers
+#
+#    -- text bands --
+#    title_alignment      top_left       artist_alignment  left_mid
+#    album_alignment      bottom_left
+#    title_x, title_y     0, 0           artist_x, artist_y  0, 0
+#    album_x, album_y     0, 0
+#    text_max_width       100%           Width of all three bands (or per line:
+#                                        text_max_width_title / _artist / _album)
+#    title_long_mode      dot            artist_long_mode / album_long_mode  SCROLL_CIRCULAR
+#    label_font_title     text_font
+#    label_font_artist    text_font
+#    label_font_album     text_font
+#    title_color          0xFFFFFF       white
+#    artist_color         0xFFB300       amber
+#    album_color          0xC7C7CC       light grey
+#    inset                8              Distance of the bands from the tile edge
+#    text_bg_color        0x000000       Band colour (all lines)
+#    text_bg_opa          60%            Band opacity
+#    text_radius          8
+#    text_pad_x, text_pad_y  8, 2
+#
+#    -- tile background (visible while no cover / through cover_opa) --
+#    bg_color             $button_off_color
+#    bg_grad_dir          NONE           NONE | VER | HOR
+#    bg_grad_color        bg_color
+#    bg_main_stop         0
+#    bg_grad_stop         255
+#
+#  Notes:
+#    - Empty lines (e.g. no album) are hidden, including their band.
+#    - The tile has no padding, so the cover reaches the edges; the bands are
+#      inset by `inset` px (default 8).
+#    - Each instance creates its own Sendspin hub (uid prefix), like sendspin.yaml;
+#      several instances on different pages work side by side.
+#    - RAM: two cover buffers of image_width x image_height x 2 bytes
+#      (256x256 ≈ 2 x 128 kB) plus the fallback image.
+#
+#  Exposed IDs:
+#    ${uid}_tile, button_${uid}, ${uid}_cover_widget, ${uid}_album_slot,
+#    ${uid}_album_art, value_title_${uid}, value_artist_${uid},
+#    value_album_${uid}, ${uid}_sync_state
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+globals:
+- id: ${uid}_current_title
+  type: std::string
+  initial_value: '""'
+- id: ${uid}_current_artist
+  type: std::string
+  initial_value: '""'
+- id: ${uid}_current_album
+  type: std::string
+  initial_value: '""'
+- id: ${uid}_sendspin_album_art_valid
+  type: bool
+  restore_value: no
+  initial_value: "false"
+
+sendspin:
+  id: ${uid}_sendspin_hub
+
+
+text_sensor:
+  - platform: sendspin
+    name: ${uid}_senspin_title
+    id: ${uid}_sendspin_title
+    type: title
+    on_value:
+      - logger.log:
+          format: "Titel: %s"
+          args: [ 'x.c_str()' ]
+      - lambda: id(${uid}_current_title) = x;
+      - script.execute: ${uid}_sync_state
+
+  - platform: sendspin
+    id: ${uid}_sendspin_artist
+    name: ${uid}_sendspin_artist
+    type: artist
+    on_value:
+      - logger.log:
+          format: "Interpret: %s"
+          args: [ 'x.c_str()' ]
+      - lambda: id(${uid}_current_artist) = x;
+      - script.execute: ${uid}_sync_state
+
+  - platform: sendspin
+    id: ${uid}_sendspin_album
+    type: album
+    name: ${uid}_sendspin_album
+    on_value:
+      - logger.log:
+          format: "Album: %s"
+          args: [ 'x.c_str()' ]
+      - lambda: id(${uid}_current_album) = x;
+      - script.execute: ${uid}_sync_state
+
+
+image:
+  - platform: file
+    id: ${uid}_fallback_image
+    file: ${fallback_image | default("https://raw.githubusercontent.com/RealDeco/xiaozhi-esphome/main/images/HA-character/240x240/playing.png")}
+    resize: ${image_width | default(256)}x${image_height | default(256)}
+    type: RGB565
+    dither: NONE
+
+  - platform: sendspin
+    id: ${uid}_album_slot
+    format: JPEG
+    type: RGB565
+    resize: ${image_width | default(256)}x${image_height | default(256)}
+    source: album
+    display_offset: ${fade_offset | default("1s")}
+    current_image:
+      id: ${uid}_album_art
+    transition_image:
+      id: ${uid}_album_art_transition
+    on_image_display:
+      - logger.log: "Cover: display"
+      # Outgoing = previous cover, or fallback if none was shown yet
+      - if:
+          condition:
+            lambda: 'return id(${uid}_sendspin_album_art_valid);'
+          then:
+            - lvgl.image.update:
+                id: ${uid}_cover_outgoing
+                src: ${uid}_album_art_transition
+          else:
+            - lvgl.image.update:
+                id: ${uid}_cover_outgoing
+                src: ${uid}_fallback_image
+      - lambda: id(${uid}_sendspin_album_art_valid) = true;
+      - lvgl.image.update:
+          id: ${uid}_cover_widget
+          src: ${uid}_album_art
+      - lvgl.animation.start: ${uid}_cover_crossfade
+    on_image_clear:
+      - logger.log: "Cover: clear"
+      - lambda: id(${uid}_sendspin_album_art_valid) = false;
+      - lvgl.image.update:
+          id: ${uid}_cover_outgoing
+          src: ${uid}_album_art_transition
+      - lvgl.image.update:
+          id: ${uid}_cover_widget
+          src: ${uid}_fallback_image
+      - lvgl.animation.start: ${uid}_cover_fade_out
+    on_image_error:
+      - logger.log:
+          level: WARN
+          format: "Cover: Fehler"
+
+
+lvgl:
+  animations:
+    - id: ${uid}_cover_crossfade
+      duration: ${fade_duration | default("2s")}
+      widgets:
+        - id: ${uid}_cover_outgoing
+          opa:
+            from: 100%
+            to: 0%
+      on_stop:
+        - sendspin.image.transition_finished: ${uid}_album_slot
+    - id: ${uid}_cover_fade_out
+      duration: ${fade_duration | default("2s")}
+      widgets:
+        - id: ${uid}_cover_outgoing
+          opa:
+            from: 100%
+            to: 0%
+  pages:
+  - id: !extend ${page_id | default("main_page")}
+    widgets:
+    - container:
+        id: ${uid}_tile
+        grid_cell_row_pos: ${row}
+        grid_cell_column_pos: ${column}
+        grid_cell_row_span: ${row_span | default(1)}
+        grid_cell_column_span: ${column_span | default(1)}
+        grid_cell_x_align: stretch
+        grid_cell_y_align: stretch
+        widgets:
+        - button:
+            id: button_${uid}
+            bg_opa: ${bg_opa | default("COVER")}
+            bg_color: ${bg_color | default(button_off_color)}
+            bg_grad_color: ${bg_grad_color | default(bg_color | default(button_off_color))}
+            bg_grad_dir: ${bg_grad_dir | default("NONE")}
+            bg_main_stop: ${bg_main_stop | default(0)}
+            bg_grad_stop: ${bg_grad_stop | default(255)}
+            clickable: false
+            clip_corner: true              # cover follows the rounded tile corners
+            pad_all: 0                     # cover reaches the edges
+            widgets:
+            # ── Cover = background (first children → drawn below the text) ──
+            - image:                       # incoming / current cover
+                id: ${uid}_cover_widget
+                align: ${image_alignment | default("center")}
+                x: ${image_x | default(0)}
+                y: ${image_y | default(0)}
+                opa: ${cover_opa | default("COVER")}
+                src: ${uid}_fallback_image
+            - image:                       # outgoing, fades out on top
+                id: ${uid}_cover_outgoing
+                align: ${image_alignment | default("center")}
+                x: ${image_x | default(0)}
+                y: ${image_y | default(0)}
+                src: ${uid}_fallback_image
+                opa: 0%
+            # ── Text bands ──
+            - obj:                         # inset frame for the three bands
+                id: ${uid}_text_frame
+                width: 100%
+                height: 100%
+                bg_opa: TRANSP
+                border_width: 0
+                pad_all: ${inset | default(8)}
+                scrollable: false
+                clickable: false
+                widgets:
+                - label:
+                    id: value_title_${uid}
+                    hidden: true
+                    align: ${title_alignment | default("top_left")}
+                    long_mode: ${title_long_mode | default("dot")}
+                    width: ${text_max_width_title | default(text_max_width | default("100%"))}
+                    x: ${title_x | default(0)}
+                    y: ${title_y | default(0)}
+                    text_font: ${label_font_title | default(text_font)}
+                    text_color: ${title_color | default("0xFFFFFF")}
+                    bg_color: ${text_bg_color | default("0x000000")}
+                    bg_opa: ${text_bg_opa | default("60%")}
+                    radius: ${text_radius | default(8)}
+                    pad_left: ${text_pad_x | default(8)}
+                    pad_right: ${text_pad_x | default(8)}
+                    pad_top: ${text_pad_y | default(2)}
+                    pad_bottom: ${text_pad_y | default(2)}
+                    text: ""
+                - label:
+                    id: value_artist_${uid}
+                    hidden: true
+                    align: ${artist_alignment | default("left_mid")}
+                    long_mode: ${artist_long_mode | default("SCROLL_CIRCULAR")}
+                    width: ${text_max_width_artist | default(text_max_width | default("100%"))}
+                    x: ${artist_x | default(0)}
+                    y: ${artist_y | default(0)}
+                    text_font: ${label_font_artist | default(text_font)}
+                    text_color: ${artist_color | default("0xFFB300")}
+                    bg_color: ${text_bg_color | default("0x000000")}
+                    bg_opa: ${text_bg_opa | default("60%")}
+                    radius: ${text_radius | default(8)}
+                    pad_left: ${text_pad_x | default(8)}
+                    pad_right: ${text_pad_x | default(8)}
+                    pad_top: ${text_pad_y | default(2)}
+                    pad_bottom: ${text_pad_y | default(2)}
+                    text: ""
+                - label:
+                    id: value_album_${uid}
+                    hidden: true
+                    align: ${album_alignment | default("bottom_left")}
+                    long_mode: ${album_long_mode | default("SCROLL_CIRCULAR")}
+                    width: ${text_max_width_album | default(text_max_width | default("100%"))}
+                    x: ${album_x | default(0)}
+                    y: ${album_y | default(0)}
+                    text_font: ${label_font_album | default(text_font)}
+                    text_color: ${album_color | default("0xC7C7CC")}
+                    bg_color: ${text_bg_color | default("0x000000")}
+                    bg_opa: ${text_bg_opa | default("60%")}
+                    radius: ${text_radius | default(8)}
+                    pad_left: ${text_pad_x | default(8)}
+                    pad_right: ${text_pad_x | default(8)}
+                    pad_top: ${text_pad_y | default(2)}
+                    pad_bottom: ${text_pad_y | default(2)}
+                    text: ""
+
+
+script:
+  # Text into the bands; an empty line hides its band completely
+  - id: ${uid}_sync_state
+    then:
+      - lambda: |-
+          auto put = [](lv_obj_t *label, const std::string &text) {
+            lv_label_set_text(label, text.c_str());
+            if (text.empty()) lv_obj_add_flag(label, LV_OBJ_FLAG_HIDDEN);
+            else              lv_obj_remove_flag(label, LV_OBJ_FLAG_HIDDEN);
+          };
+          put(id(value_title_${uid}),  id(${uid}_current_title));
+          put(id(value_artist_${uid}), id(${uid}_current_artist));
+          put(id(value_album_${uid}),  id(${uid}_current_album));

@@ -126,27 +126,27 @@ packages:
   # Sendspin: Cover + Titel/Interpret/Album (der Sendspin-Hub kommt aus dieser Kachel;
   # die Textzeilen auf media_page/solar_page hängen sich unten per !extend an).
   now_playing: !include
-    file: ../../draft/ui/sensor/sendspin.yaml
+    file: ../../draft/ui/sensor/sendspin_bg.yaml
     vars:
       uid: np
       row: 0
       column: 4
       column_span: 2
       row_span: 2
-      image_width: 100
-      image_height: 100
+      image_width: 250
+      image_height: 250
       image_alignment: top_left
 #      title_alignment: top_right
 #      artist_alignment: right_mid
 #      album_alignment: bottom_left
 
 
-      album_alignment: top_right
-      title_alignment: right_mid
-      title_y: 10
+      album_alignment: top_left
+      title_alignment: center
+      title_y: -30
       artist_alignment: bottom_mid
-
-      text_max_width_album: 50%
+      artist_y: -30
+      text_max_width_album: 90%
       text_max_width_artist: 90%
       text_max_width_title: 95%
       title_long_mode: "wrap"
