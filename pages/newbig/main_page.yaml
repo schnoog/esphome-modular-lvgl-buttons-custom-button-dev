@@ -132,12 +132,29 @@ packages:
       row: 0
       column: 4
       column_span: 2
+      row_span: 2
       image_width: 100
       image_height: 100
-      text_max_width: 50%
-      label_font_title: nunito_20
-      label_font_artist: nunito_20
-      label_font_album: nunito_18
+      image_alignment: top_left
+#      title_alignment: top_right
+#      artist_alignment: right_mid
+#      album_alignment: bottom_left
+
+
+      album_alignment: top_right
+      title_alignment: right_mid
+      title_y: 10
+      artist_alignment: bottom_mid
+
+      text_max_width_album: 50%
+      text_max_width_artist: 90%
+      text_max_width_title: 95%
+      title_long_mode: "wrap"
+      artist_long_mode: "wrap"
+      album_long_mode: "wrap"
+      label_font_title: nunito_30
+      label_font_artist: nunito_24
+      label_font_album: nunito_20
       page_id: "main_page"
       bg_grad_dir: VER
       bg_color: $grad_media_top

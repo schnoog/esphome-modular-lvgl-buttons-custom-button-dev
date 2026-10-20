@@ -32,7 +32,7 @@ packages:
 
 
   img_heating_mode_btn: !include
-    file: ../../draft/ui/sensor/remote_text_imageswitch_remoteimages.yaml
+    file: ../../draft/ui/button/remote_text_imageswitch_action_remoteimages.yaml
     vars:
       uid: img_heating_mode
       entity_id: "select.thermostat_hc1_mode"
@@ -53,17 +53,19 @@ packages:
       state_1_bg_color: $grad_klima_top
       state_1_bg_grad_color: $grad_klima_bottom
       state_1_image_url: "${img_base}/heizung_automatisch.png"
+      state_1_action: script.buderus_operation_man
       state_2: "day"
       #state_2_label: "Manuell"
       state_2_bg_color: $grad_heizung_top
       state_2_bg_grad_color: $grad_heizung_bottom
       state_2_image_url: "${img_base}/heizung_manuell.png"
+      state_2_action: script.buderus_operation_auto
       state_3: "night"
       #state_3_label: "Manuell"
       state_3_bg_color: $grad_heizung_top
       state_3_bg_grad_color: $grad_heizung_bottom
       state_3_image_url: "${img_base}/heizung_manuell.png"
-
+      state_3_action: script.buderus_operation_auto
 
   img_heating_daypart_btn: !include
     file: ../../draft/ui/sensor/remote_text_imageswitch_remoteimages.yaml

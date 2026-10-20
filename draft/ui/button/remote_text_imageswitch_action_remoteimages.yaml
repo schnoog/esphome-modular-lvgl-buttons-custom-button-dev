@@ -1,0 +1,518 @@
+# Remote text button tile with state-dependent background AND state-dependent action.
+# Like sensor/remote_text_imageswitch_remoteimages.yaml (live text value of a Home
+# Assistant entity, up to 4 values with own background colour/gradient, image and
+# display text) – but tapping the tile runs a Home Assistant action that depends on
+# the value currently shown, e.g. "auto" → switch to "day", "day" → back to "auto".
+#
+# vars:
+#   uid:                   unique identifier
+#   entity_id:             HA entity, e.g. "climate.living_room"
+#   attribute:             HA attribute to display instead of state (optional, e.g. hvac_action)
+#   row:                   grid row
+#   column:                grid column
+#   text:                  tile name shown on tile     (optional – label hidden if omitted)
+#   icon:                  icon glyph                  (optional – icon hidden if omitted)
+#   bg_opa:                background opacity. 0%-100% or TRANSP / COVER (optional, default: COVER)
+#   row_span:              (default: 1)
+#   column_span:           (default: 1)
+#   page_id:               parent page (default: main_page)
+#   label_font:            font for the tile name
+#   sensor_font:           font for the value (needs letter glyphs, not just digits!)
+#   show_value:            false = hide the value, e.g. when the images already show
+#                          the state (optional, default: true)
+#
+#   icon_alignment:        LVGL align of the icon  (default: top_left)
+#   label_alignment:       LVGL align of the label (default: bottom_left)
+#   value_alignment:       LVGL align of the value (default: top_right)
+#
+#   image_width:           images are scaled to fit inside this width  (default: 128)
+#   image_height:          images are scaled to fit inside this height (default: 128)
+#   image_format:          AUTO | PNG | JPEG | BMP | QOI   (default: AUTO)
+#   image_alignment:       LVGL align of the image (default: center)
+#   image_opa:             opacity of the image, e.g. 60% (default: COVER)
+#   image_update_interval: re-download interval, e.g. 15min (default: never = load once)
+#
+#   ── Default look (any value not listed below, e.g. "unavailable") ──
+#   bg_color:              background colour             (default: $button_off_color)
+#   bg_grad_color:         2nd gradient colour           (default: same as bg_color)
+#   bg_grad_dir:           NONE | VER | HOR, all states  (default: NONE = solid colour)
+#   image_url:             background image (optional – also fallback for states without own image)
+#
+#   ── Per-value looks, N = 1 … 4 (all optional) ──
+#   state_N:               value to match, case-insensitive. QUOTE IT: "off", "on" (YAML booleans!)
+#   state_N_label:         text shown instead of the raw value, e.g. "Aus" (default: raw value)
+#   state_N_bg_color:      background colour  (default: default look)
+#   state_N_bg_grad_color: 2nd gradient colour (default: state_N_bg_color, else default look)
+#   state_N_image_url:     background image   (default: image_url)
+#
+#   ── Tap actions (all optional; no action = tap does nothing in that state) ──
+#   state_N_action:        HA action for value N, e.g. "select.select_option",
+#                          "switch.turn_off", "script.turn_on", "climate.set_hvac_mode"
+#   state_N_action_data:   extra data as a mapping, e.g. {option: "day"}  (default: none)
+#   state_N_action_entity: entity_id sent with the action  (default: entity_id;
+#                          "" = send no entity_id, e.g. for "script.my_script")
+#   default_action, default_action_data, default_action_entity:
+#                          same for any other value (unmatched, "unavailable", …)
+#
+# Notes:
+#   - "Allow the device to perform Home Assistant actions" must be enabled in the
+#     HA ESPHome integration options, otherwise taps do nothing.
+#   - The action is chosen by the value shown at the moment of the tap; the tile
+#     only changes its look once HA reports the new state.
+#   - Icon/label are always created but hidden when not passed (ESPHome packages
+#     cannot omit widgets conditionally).
+#   - All 5 online_images are always declared (they require a URL). Without a URL
+#     they get a dummy URL and are never downloaded (no RAM used).
+#   - Images are downloaded one after another to avoid parallel HTTP requests.
+#   - Requires http_request (declared below; settings in your main config win).
+
+#
+# Example (heating mode: tap toggles auto ↔ day):
+#   heating_mode_btn: !include
+#     file: draft/ui/button/remote_text_imageswitch_action_remoteimages.yaml
+#     vars:
+#       uid: heating_mode_btn
+#       entity_id: "select.thermostat_hc1_mode"
+#       row: 0
+#       column: 0
+#       state_1: "auto"
+#       state_1_label: "Auto"
+#       state_1_action: select.select_option
+#       state_1_action_data: {option: "day"}
+#       state_2: "day"
+#       state_2_label: "Manuell"
+#       state_2_action: select.select_option
+#       state_2_action_data: {option: "auto"}
+
+globals:
+- id: ${uid}_current_value
+  type: std::string
+  initial_value: '""'
+- id: ${uid}_state_idx          # active look: 0 = default, 1..4 = state_N
+  type: uint8_t
+  initial_value: '0'
+- id: ${uid}_new_idx            # look matching the latest value
+  type: uint8_t
+  initial_value: '0'
+- id: ${uid}_img_slot           # image currently shown: 0..4, 255 = none
+  type: uint8_t
+  initial_value: '255'
+- id: ${uid}_img_busy           # a download is running
+  type: bool
+  initial_value: 'false'
+# download state per image: 0 = pending, 1 = downloading, 2 = loaded
+- id: ${uid}_img_state_0
+  type: uint8_t
+  initial_value: '0'
+- id: ${uid}_img_state_1
+  type: uint8_t
+  initial_value: '0'
+- id: ${uid}_img_state_2
+  type: uint8_t
+  initial_value: '0'
+- id: ${uid}_img_state_3
+  type: uint8_t
+  initial_value: '0'
+- id: ${uid}_img_state_4
+  type: uint8_t
+  initial_value: '0'
+
+http_request:
+
+image:
+- platform: online_image
+  id: ${uid}_bg_image_0
+  url: '${image_url | default("http://localhost/no_image.png")}'
+  format: ${image_format | default("AUTO")}
+  type: RGB565
+  transparency: alpha_channel
+  resize: ${image_width | default(128)}x${image_height | default(128)}
+  update_interval: ${image_update_interval | default("never")}
+  on_download_finished:
+  - lambda: |-
+      id(${uid}_img_state_0) = 2;
+      id(${uid}_img_busy) = false;
+  - script.execute: ${uid}_sync_image
+  - script.execute: ${uid}_download_next
+  on_error:
+  - lambda: |-
+      id(${uid}_img_state_0) = 0;   // retry on next interval tick
+      id(${uid}_img_busy) = false;
+
+- platform: online_image
+  id: ${uid}_bg_image_1
+  url: '${state_1_image_url | default("http://localhost/no_image.png")}'
+  format: ${image_format | default("AUTO")}
+  type: RGB565
+  transparency: alpha_channel
+  resize: ${image_width | default(128)}x${image_height | default(128)}
+  update_interval: ${image_update_interval | default("never")}
+  on_download_finished:
+  - lambda: |-
+      id(${uid}_img_state_1) = 2;
+      id(${uid}_img_busy) = false;
+  - script.execute: ${uid}_sync_image
+  - script.execute: ${uid}_download_next
+  on_error:
+  - lambda: |-
+      id(${uid}_img_state_1) = 0;
+      id(${uid}_img_busy) = false;
+
+- platform: online_image
+  id: ${uid}_bg_image_2
+  url: '${state_2_image_url | default("http://localhost/no_image.png")}'
+  format: ${image_format | default("AUTO")}
+  type: RGB565
+  transparency: alpha_channel
+  resize: ${image_width | default(128)}x${image_height | default(128)}
+  update_interval: ${image_update_interval | default("never")}
+  on_download_finished:
+  - lambda: |-
+      id(${uid}_img_state_2) = 2;
+      id(${uid}_img_busy) = false;
+  - script.execute: ${uid}_sync_image
+  - script.execute: ${uid}_download_next
+  on_error:
+  - lambda: |-
+      id(${uid}_img_state_2) = 0;
+      id(${uid}_img_busy) = false;
+
+- platform: online_image
+  id: ${uid}_bg_image_3
+  url: '${state_3_image_url | default("http://localhost/no_image.png")}'
+  format: ${image_format | default("AUTO")}
+  type: RGB565
+  transparency: alpha_channel
+  resize: ${image_width | default(128)}x${image_height | default(128)}
+  update_interval: ${image_update_interval | default("never")}
+  on_download_finished:
+  - lambda: |-
+      id(${uid}_img_state_3) = 2;
+      id(${uid}_img_busy) = false;
+  - script.execute: ${uid}_sync_image
+  - script.execute: ${uid}_download_next
+  on_error:
+  - lambda: |-
+      id(${uid}_img_state_3) = 0;
+      id(${uid}_img_busy) = false;
+
+- platform: online_image
+  id: ${uid}_bg_image_4
+  url: '${state_4_image_url | default("http://localhost/no_image.png")}'
+  format: ${image_format | default("AUTO")}
+  type: RGB565
+  transparency: alpha_channel
+  resize: ${image_width | default(128)}x${image_height | default(128)}
+  update_interval: ${image_update_interval | default("never")}
+  on_download_finished:
+  - lambda: |-
+      id(${uid}_img_state_4) = 2;
+      id(${uid}_img_busy) = false;
+  - script.execute: ${uid}_sync_image
+  - script.execute: ${uid}_download_next
+  on_error:
+  - lambda: |-
+      id(${uid}_img_state_4) = 0;
+      id(${uid}_img_busy) = false;
+
+# ── Start / retry downloads once the network is up (WiFi and Ethernet) ──────
+interval:
+- interval: 12s
+  then:
+  - script.execute: ${uid}_download_next
+
+lvgl:
+  pages:
+  - id: !extend ${page_id | default("main_page")}
+    widgets:
+    - container:
+        id: ${uid}_tile
+        grid_cell_row_pos: ${row}
+        grid_cell_column_pos: ${column}
+        grid_cell_row_span: ${row_span | default(1)}
+        grid_cell_column_span: ${column_span | default(1)}
+        grid_cell_x_align: stretch
+        grid_cell_y_align: stretch
+        widgets:
+        - button:
+            id: button_${uid}
+            bg_opa: ${bg_opa | default("COVER")}
+            bg_color: ${bg_color | default(button_off_color)}
+            bg_grad_color: ${bg_grad_color | default(bg_color | default(button_off_color))}
+            bg_grad_dir: ${bg_grad_dir | default("NONE")}
+            clickable: true
+            clip_corner: true            # clip image to the rounded tile corners
+            on_short_click:
+              - script.execute: ${uid}_tap
+            widgets:
+            # background image – first child, so it is drawn behind the labels
+            - image:
+                id: img_${uid}
+                src: ${uid}_bg_image_0
+                align: ${image_alignment | default("center")}
+                opa: ${image_opa | default("COVER")}
+                hidden: true             # shown once a matching image is loaded
+                y: ${image_y | default(0)}
+                x: ${image_x | default(0)}
+            - label:
+                id: icon_${uid}
+                hidden: "${ 'false' if (icon | default('')) != '' else 'true' }"
+                align: ${icon_alignment | default("top_left")}
+                text_font: $icon_font
+                text_color: $icon_off_color
+                text: ${icon | default('')}
+                y: ${icon_y | default(0)}
+                x: ${icon_x | default(0)}
+            - label:
+                id: label_${uid}
+                hidden: "${ 'false' if (text | default('')) != '' else 'true' }"
+                align: ${label_alignment | default("bottom_left")}
+                long_mode: wrap
+                width: 70%
+                text_color: $label_off_color
+                text_font: ${label_font | default(text_font)}
+                text: ${text | default('')}
+                y: ${label_y | default(0)}
+                x: ${label_x | default(0)}
+            - label:
+                id: value_${uid}
+                hidden: "${ 'true' if (show_value | default(true) | string | lower) in ['false', 'no', 'off', '0'] else 'false' }"
+                align: ${value_alignment | default("top_right")}
+                text_font: ${sensor_font | default(text_font)}
+                text_color: $label_on_color
+                text: "--"
+                y: ${value_y | default(0)}
+                x: ${value_x | default(0)}
+
+# ── Subscribe to the HA entity state ─────────────────────────────────────────
+text_sensor:
+- platform: homeassistant
+  id: ${uid}_ha_value
+  entity_id: ${entity_id}
+  attribute: ${attribute | default("")}
+  internal: true
+  on_value:
+  - lambda: id(${uid}_current_value) = x;
+  - script.execute: ${uid}_sync_state
+
+script:
+# ── Value changed: find matching look, update text, switch background ──────
+- id: ${uid}_sync_state
+  then:
+  - lambda: |-
+      const std::string &v = id(${uid}_current_value);
+      const char *values[4] = {"${state_1 | default('')}", "${state_2 | default('')}",
+                               "${state_3 | default('')}", "${state_4 | default('')}"};
+      uint8_t idx = 0;
+      for (uint8_t i = 0; i < 4; i++) {
+        if (values[i][0] != '\0' && str_equals_case_insensitive(v, values[i])) {
+          idx = i + 1;
+          break;
+        }
+      }
+      id(${uid}_new_idx) = idx;
+  - lvgl.label.update:
+      id: value_${uid}
+      text: !lambda |-
+        const char *labels[5] = {"", "${state_1_label | default('')}", "${state_2_label | default('')}",
+                                 "${state_3_label | default('')}", "${state_4_label | default('')}"};
+        uint8_t idx = id(${uid}_new_idx);
+        if (idx > 0 && labels[idx][0] != '\0') return std::string(labels[idx]);
+        return id(${uid}_current_value);
+  # only touch the background when the look actually changes
+  - if:
+      condition:
+        lambda: return id(${uid}_new_idx) != id(${uid}_state_idx);
+      then:
+      - lambda: id(${uid}_state_idx) = id(${uid}_new_idx);
+      - script.execute: ${uid}_sync_background
+      - script.execute: ${uid}_sync_image
+
+# ── Background colour / gradient of the active look ─────────────────────────
+- id: ${uid}_sync_background
+  then:
+  - if:
+      condition:
+        lambda: return id(${uid}_state_idx) == 0;
+      then:
+      - lvgl.widget.update:
+          id: button_${uid}
+          bg_color: ${bg_color | default(button_off_color)}
+          bg_grad_color: ${bg_grad_color | default(bg_color | default(button_off_color))}
+  - if:
+      condition:
+        lambda: return id(${uid}_state_idx) == 1;
+      then:
+      - lvgl.widget.update:
+          id: button_${uid}
+          bg_color: ${state_1_bg_color | default(bg_color | default(button_off_color))}
+          bg_grad_color: ${state_1_bg_grad_color | default(state_1_bg_color | default(bg_grad_color | default(bg_color | default(button_off_color))))}
+  - if:
+      condition:
+        lambda: return id(${uid}_state_idx) == 2;
+      then:
+      - lvgl.widget.update:
+          id: button_${uid}
+          bg_color: ${state_2_bg_color | default(bg_color | default(button_off_color))}
+          bg_grad_color: ${state_2_bg_grad_color | default(state_2_bg_color | default(bg_grad_color | default(bg_color | default(button_off_color))))}
+  - if:
+      condition:
+        lambda: return id(${uid}_state_idx) == 3;
+      then:
+      - lvgl.widget.update:
+          id: button_${uid}
+          bg_color: ${state_3_bg_color | default(bg_color | default(button_off_color))}
+          bg_grad_color: ${state_3_bg_grad_color | default(state_3_bg_color | default(bg_grad_color | default(bg_color | default(button_off_color))))}
+  - if:
+      condition:
+        lambda: return id(${uid}_state_idx) == 4;
+      then:
+      - lvgl.widget.update:
+          id: button_${uid}
+          bg_color: ${state_4_bg_color | default(bg_color | default(button_off_color))}
+          bg_grad_color: ${state_4_bg_grad_color | default(state_4_bg_color | default(bg_grad_color | default(bg_color | default(button_off_color))))}
+
+# ── Background image of the active look ─────────────────────────────────────
+#   own image loaded → own image; else default image loaded → default image; else hidden
+- id: ${uid}_sync_image
+  then:
+  - lambda: |-
+      const uint8_t st[5] = {id(${uid}_img_state_0), id(${uid}_img_state_1), id(${uid}_img_state_2),
+                             id(${uid}_img_state_3), id(${uid}_img_state_4)};
+      uint8_t idx = id(${uid}_state_idx);
+      id(${uid}_img_slot) = (st[idx] == 2) ? idx : ((st[0] == 2) ? 0 : 255);
+  - if:
+      condition:
+        lambda: return id(${uid}_img_slot) == 0;
+      then:
+      - lvgl.image.update:
+          id: img_${uid}
+          src: ${uid}_bg_image_0
+  - if:
+      condition:
+        lambda: return id(${uid}_img_slot) == 1;
+      then:
+      - lvgl.image.update:
+          id: img_${uid}
+          src: ${uid}_bg_image_1
+  - if:
+      condition:
+        lambda: return id(${uid}_img_slot) == 2;
+      then:
+      - lvgl.image.update:
+          id: img_${uid}
+          src: ${uid}_bg_image_2
+  - if:
+      condition:
+        lambda: return id(${uid}_img_slot) == 3;
+      then:
+      - lvgl.image.update:
+          id: img_${uid}
+          src: ${uid}_bg_image_3
+  - if:
+      condition:
+        lambda: return id(${uid}_img_slot) == 4;
+      then:
+      - lvgl.image.update:
+          id: img_${uid}
+          src: ${uid}_bg_image_4
+  - if:
+      condition:
+        lambda: return id(${uid}_img_slot) == 255;
+      then:
+      - lvgl.widget.hide: img_${uid}
+      else:
+      - lvgl.widget.show: img_${uid}
+
+# ── Start the next pending download (one at a time) ─────────────────────────
+- id: ${uid}_download_next
+  then:
+  - if:
+      condition:
+        lambda: |-
+          return ${ 'true' if (image_url | default('')) != '' else 'false' } &&
+                 id(${uid}_img_state_0) == 0 && !id(${uid}_img_busy) && network::is_connected();
+      then:
+      - lambda: |-
+          id(${uid}_img_busy) = true;
+          id(${uid}_img_state_0) = 1;
+      - component.update: ${uid}_bg_image_0
+  - if:
+      condition:
+        lambda: |-
+          return ${ 'true' if (state_1_image_url | default('')) != '' else 'false' } &&
+                 id(${uid}_img_state_1) == 0 && !id(${uid}_img_busy) && network::is_connected();
+      then:
+      - lambda: |-
+          id(${uid}_img_busy) = true;
+          id(${uid}_img_state_1) = 1;
+      - component.update: ${uid}_bg_image_1
+  - if:
+      condition:
+        lambda: |-
+          return ${ 'true' if (state_2_image_url | default('')) != '' else 'false' } &&
+                 id(${uid}_img_state_2) == 0 && !id(${uid}_img_busy) && network::is_connected();
+      then:
+      - lambda: |-
+          id(${uid}_img_busy) = true;
+          id(${uid}_img_state_2) = 1;
+      - component.update: ${uid}_bg_image_2
+  - if:
+      condition:
+        lambda: |-
+          return ${ 'true' if (state_3_image_url | default('')) != '' else 'false' } &&
+                 id(${uid}_img_state_3) == 0 && !id(${uid}_img_busy) && network::is_connected();
+      then:
+      - lambda: |-
+          id(${uid}_img_busy) = true;
+          id(${uid}_img_state_3) = 1;
+      - component.update: ${uid}_bg_image_3
+  - if:
+      condition:
+        lambda: |-
+          return ${ 'true' if (state_4_image_url | default('')) != '' else 'false' } &&
+                 id(${uid}_img_state_4) == 0 && !id(${uid}_img_busy) && network::is_connected();
+      then:
+      - lambda: |-
+          id(${uid}_img_busy) = true;
+          id(${uid}_img_state_4) = 1;
+      - component.update: ${uid}_bg_image_4
+
+# ── Tap: run the action that belongs to the value currently shown ───────────
+- id: ${uid}_tap
+  then:
+  - if:
+      condition:
+        lambda: return id(${uid}_state_idx) == 0 && ${ 'true' if (default_action | default('')) != '' else 'false' };
+      then:
+      - homeassistant.action:
+          action: ${default_action | default('none.none')}
+          data: "${ dict(default_action_data | default({}), **({'entity_id': (default_action_entity | default(entity_id))} if (default_action_entity | default(entity_id)) != '' else {})) }"
+  - if:
+      condition:
+        lambda: return id(${uid}_state_idx) == 1 && ${ 'true' if (state_1_action | default('')) != '' else 'false' };
+      then:
+      - homeassistant.action:
+          action: ${state_1_action | default('none.none')}
+          data: "${ dict(state_1_action_data | default({}), **({'entity_id': (state_1_action_entity | default(entity_id))} if (state_1_action_entity | default(entity_id)) != '' else {})) }"
+  - if:
+      condition:
+        lambda: return id(${uid}_state_idx) == 2 && ${ 'true' if (state_2_action | default('')) != '' else 'false' };
+      then:
+      - homeassistant.action:
+          action: ${state_2_action | default('none.none')}
+          data: "${ dict(state_2_action_data | default({}), **({'entity_id': (state_2_action_entity | default(entity_id))} if (state_2_action_entity | default(entity_id)) != '' else {})) }"
+  - if:
+      condition:
+        lambda: return id(${uid}_state_idx) == 3 && ${ 'true' if (state_3_action | default('')) != '' else 'false' };
+      then:
+      - homeassistant.action:
+          action: ${state_3_action | default('none.none')}
+          data: "${ dict(state_3_action_data | default({}), **({'entity_id': (state_3_action_entity | default(entity_id))} if (state_3_action_entity | default(entity_id)) != '' else {})) }"
+  - if:
+      condition:
+        lambda: return id(${uid}_state_idx) == 4 && ${ 'true' if (state_4_action | default('')) != '' else 'false' };
+      then:
+      - homeassistant.action:
+          action: ${state_4_action | default('none.none')}
+          data: "${ dict(state_4_action_data | default({}), **({'entity_id': (state_4_action_entity | default(entity_id))} if (state_4_action_entity | default(entity_id)) != '' else {})) }"

@@ -221,16 +221,18 @@ lvgl:
             - label:
                 id: value_title_${uid}
                 align:  ${title_alignment | default("top_right")}  
-                long_mode: wrap
-                width: ${text_max_width | default("60%")} 
+                long_mode: ${title_long_mode | default("wrap")} 
+                width: ${text_max_width_title | default("60%")} 
+                x: ${title_x | default(0)}
+                y: ${title_y | default(0)}                
                 text_color: $label_off_color
                 text_font: ${label_font_title | default(text_font)}
                 text: ""
             - label:
                 id: value_artist_${uid}
                 align: ${artist_alignment | default("right_mid")}
-                long_mode: SCROLL
-                width: ${text_max_width | default("60%")}
+                long_mode: ${artist_long_mode | default("SCROLL")} 
+                width: ${text_max_width_artist | default("60%")}
                 y: ${artist_y | default(0)}
                 x: ${artist_x | default(0)}                
                 text_color: $label_off_color
@@ -239,8 +241,8 @@ lvgl:
             - label:
                 id: value_album_${uid}
                 align: ${album_alignment | default("bottom_right")}
-                long_mode: SCROLL
-                width: ${text_max_width | default("60%")}
+                long_mode: ${album_long_mode | default("SCROLL")}
+                width: ${text_max_width_album | default("60%")}
                 text_color: $label_off_color
                 text_font: ${label_font_album | default(text_font)}
                 text: ""                
