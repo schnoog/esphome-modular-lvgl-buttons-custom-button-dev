@@ -6,6 +6,7 @@ venv
 .esphome/*
 esphome-modular-lvgl-buttons/*
 venv/*
-
+screenshots
+screenshots/*
 _ws7memore_analyzed.txt
 dump.yaml

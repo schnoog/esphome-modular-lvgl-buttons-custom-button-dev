@@ -131,6 +131,17 @@ rtttl:
 external_components:
   - source: github://eigger/espcomponents@latest
     components: [ sip_client ]
+  # Screenshot per HTTP: eigene Kopie in draft/components (LVGL 9 + PNG-Encoder im PSRAM;
+  # das GitHub-Original agillis/esphome-lvgl-screenshot ist noch LVGL 8)
+  - source:
+      type: local
+      path: draft/components
+    components: [lvgl_screenshot]
+
+
+lvgl_screenshot:
+  port: 8080  # optional, default 8080
+
  #    refresh: always
 
  # Basic VoIP/SIP Setup

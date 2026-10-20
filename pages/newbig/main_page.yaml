@@ -134,7 +134,7 @@ packages:
       column_span: 2
       row_span: 2
       image_width: 250
-      image_height: 250
+      image_height: 290
       image_alignment: top_left
 #      title_alignment: top_right
 #      artist_alignment: right_mid
