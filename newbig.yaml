@@ -29,6 +29,12 @@ substitutions:
   # defaults for popup pages
   popup_timeout_seconds: '120'  # timeout in seconds  
 
+  # SIP: Anrufe von der Türsprechstelle (FRITZ!Box-Intern **623) gesondert behandeln
+  sip_doorbell_number: "**623"
+  sip_doorbell_label: "Türklingel"
+  sip_ringtone_phone: 'Loewenzahn:d=4,o=5,b=225:4f5,8g5,8a5,4p,8a5,4p,4a5,8g5,8f5,8p,4c5.,2p,4f5,8g5,8a5,4p,8a5,4p,4a5,8g5,4f5,4c6.,2p,4p,4c6,8d6,8d#6,4p,8d#6,4p,4d#6,8d6,4c6,8a#5,4p,8a#5,4p,8a#5,4f5,8g5,8g#5,8p,4g5.,2p,4d6,8g6'
+  sip_ringtone_door: 'Fraggle Rock:o=5,d=8,b=112,b=112:c6,16c6,c6,16c6,a,2p,b,b,a,g,16e6,d6,c6,16a,g,c6,16c6,c6,16d6,a,2p,b,16b,a,16b,c6'
+
   # Grafiken (Menü-Kacheln aktiv, andere Kacheln auskommentiert)
   img_base: "http://192.168.178.119:8123/local/images"
 
@@ -110,7 +116,18 @@ time:
 api:
   encryption:
     key: !secret api_encryption_key
-
+  actions:
+    # Test: beliebigen RTTTL-String abspielen
+    - action: play_rtttl
+      variables:
+        song: string
+      then:
+        - rtttl.play:
+            rtttl: !lambda 'return song;'
+    # Test: laufenden Ton stoppen
+    - action: stop_rtttl
+      then:
+        - rtttl.stop
 
       
 logger:
@@ -148,7 +165,7 @@ button:
 rtttl:
   speaker: my_speaker
   id: my_rtttl
-  gain: 0.8
+  gain: 0.6
 
 
 external_components:
@@ -178,18 +195,30 @@ sip_client:
   on_registered:
     - logger.log: "SIP registriert"
   on_incoming_call:
-    - rtttl.play: 'Loewenzahn:d=4,o=5,b=225:4f5,8g5,8a5,4p,8a5,4p,4a5,8g5,8f5,8p,4c5.,2p,4f5,8g5,8a5,4p,8a5,4p,4a5,8g5,4f5,4c6.,2p,4p,4c6,8d6,8d#6,4p,8d#6,4p,4d#6,8d6,4c6,8a#5,4p,8a#5,4p,8a#5,4f5,8g5,8g#5,8p,4g5.,2p,4d6,8g6'
-
+    # Türsprechstelle (${sip_doorbell_number}) → eigener Klingelton + "Türklingel" statt Nummer.
+    # caller kann je nach FRITZ!Box "**623" oder "sip:**623@…" sein → enthält-Vergleich.
+    - if:
+        condition:
+          lambda: 'return caller.find("${sip_doorbell_number}") != std::string::npos;'
+        then:
+          - rtttl.play: '${sip_ringtone_door}'
+          - logger.log:
+              format: "Doorbell ringing (caller %s)"
+              args: [caller.c_str()]
+          - lvgl.label.update:
+              id: caller_id_label
+              text: "${sip_doorbell_label}"
+        else:
+          - rtttl.play: '${sip_ringtone_phone}'
+          - logger.log:
+              format: "Playing ringtone....Incoming call from %s"
+              args: [caller.c_str()]
+          - lvgl.label.update:
+              id: caller_id_label
+              text: !lambda 'return caller;'
+    - lvgl.widget.show: incoming_call_popup
   #'Loewenzahn:d=4,o=5,b=225:4f5,8g5,8a5,4p,8a5,4p,4a5,8g5,8f5,8p,4c5.,2p,4f5,8g5,8a5,4p,8a5,4p,4a5,8g5,4f5,4c6.,2p,4p,4c6,8d6,8d#6,4p,8d#6,4p,4d#6,8d6,4c6,8a#5,4p,8a#5,4p,8a#5,4f5,8g5,8g#5,8p,4g5.,2p,4d6,8g6'
   #'AlfredJQ:d=8,o=5,b=125:g,c6,c6,c6,c6,g,g,p,g,a,a,p,a,e,e,p,e,f,d,f,d,a,g,p,g,c,d,e,g,4c6,p,g,c6,c6,c6,c6,g,g,p,g,a,a,p,a,e,e,p,e,f,d,f,d,a,g,p,g,c,d,e,g,4c6,p,c6,c#6,c#6,c#6,c#6,g#,g#,p,g#,a#,a#,a#,a#,f,f,p,f,d#,f,f#,d#,a#,g#,p,g#,c#,d#,f,g#,4c#6,p,g#,c#6,c#6,c#6,c#6,g#,g#'
-
-    - logger.log:
-        format: "Playing ringtone....Incoming call from %s"
-        args: [caller.c_str()]
-    - lvgl.label.update:
-        id: caller_id_label
-        text: !lambda 'return caller;'
-    - lvgl.widget.show: incoming_call_popup
   on_call_connected:
     - rtttl.stop
     - lvgl.widget.hide: incoming_call_popup
@@ -304,6 +333,7 @@ packages:
   page_solar:   !include pages/newbig/solar_page.yaml
   page_cal:     !include pages/newbig/cal_page.yaml
   page_weather: !include pages/newbig/weather_page.yaml
+  lights_page:  !include pages/newbig/lights_page.yaml
   page_cam:     !include pages/newbig/cam_page.yaml
 
 switch:

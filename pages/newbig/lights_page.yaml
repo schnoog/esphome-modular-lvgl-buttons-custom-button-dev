@@ -1,0 +1,182 @@
+# =====================================================================
+#  newbig – Seite "main_page" (Hauptseite)
+#  Eingebunden in newbig.yaml unter packages: (Reihenfolge = Wisch-Reihenfolge).
+#  Pfade sind relativ zu dieser Datei (../../draft/…, ../../esphome-modular-lvgl-buttons/…);
+#  Farben ($grad_*) und ${img_base} kommen aus den substitutions in newbig.yaml.
+# =====================================================================
+
+packages:
+
+  clock_lights: !include
+    file: ../../draft/ui/clock/daytime_gradient_clock.yaml
+    vars:
+      uid: clock_lights
+      row: 0
+      column: 6
+      column_span: 2
+      page_id: "light_page"
+      weekday_names: ["Montag", "Dienstag", "Mittwoch", "Donnerstag",
+                      "Freitag", "Samstag", "Sonntag"]
+      date_format: "{weekday}, {day}."
+      date_font: nunito_24
+      time_font: nunito_72
+      time_y: 14
+
+
+
+
+  kamera_eingang_lights: !include
+    file: ../../draft/ui/page/page_camerabutton.yaml
+    vars:
+      uid: kamera_eingang_lights
+      row: 1
+      column: 6
+      column_span: 2
+      row_span: 2
+      text: "Eingang"
+      camera_url: http://192.168.178.27:180/rd/esp32s3camX_256.jpg
+      update_interval: 1s
+      image_width: 256
+      image_height: 192
+      click_page: "cam_page"
+      page_id: "light_page"
+      bg_grad_dir: VER
+      bg_color: $grad_cam_top
+      bg_grad_color: $grad_cam_bottom
+
+
+  light_1_btn: !include
+    file: ../../esphome-modular-lvgl-buttons/ui/light/remote.yaml
+    vars:
+      uid: light_1
+      entity_id: "light.wohnzimmer_shellycolorblbg3_color1"
+      row: 0
+      column: 1
+      text: "Ceiling"
+      icon: $mdi_ceiling_light
+      page_id: "light_page"
+
+  light_2_btn: !include
+    file: ../../esphome-modular-lvgl-buttons/ui/light/remote.yaml
+    vars:
+      uid: light_2
+      entity_id: "light.wohnzimmer_shellycolorblbg3_color1"
+      row: 1
+      column: 1
+      text: "Ceiling"
+      icon: $mdi_ceiling_light
+      page_id: "light_page"
+
+
+
+
+  now_playing_light: !include
+    file: ../../draft/ui/sensor/sendspin_bg.yaml
+    vars:
+      uid: np_lights
+      row: 0
+      column: 4
+      column_span: 2
+      row_span: 2
+      image_width: 250
+      image_height: 290
+      image_alignment: top_left
+#      title_alignment: top_right
+#      artist_alignment: right_mid
+#      album_alignment: bottom_left
+
+
+      album_alignment: top_left
+      title_alignment: center
+      title_y: -30
+      artist_alignment: bottom_mid
+      artist_y: -30
+      text_max_width_album: 90%
+      text_max_width_artist: 90%
+      text_max_width_title: 95%
+      title_long_mode: "wrap"
+      artist_long_mode: "wrap"
+      album_long_mode: "wrap"
+      label_font_title: nunito_30
+      label_font_artist: nunito_24
+      label_font_album: nunito_20
+      page_id: "light_page"
+      bg_grad_dir: VER
+      bg_color: $grad_media_top
+      bg_grad_color: $grad_media_bottom
+
+
+
+
+
+
+ #Nav (Menü: Grafiken aktiv)
+  page_button_lights_media: !include
+    file: ../../draft/ui/page/page_button_localimage.yaml
+    vars:
+      uid: page_button_lights_media
+      row: 3
+      column: 0
+      column_span: 2
+      text: "Media"
+      icon: $mdi_page_next
+      page_id: "light_page"
+      click_page: "media_page"
+      image: nav_media
+
+
+  page_button_lights_heating: !include
+    file: ../../draft/ui/page/page_button_localimage.yaml
+    vars:
+      uid: page_button_lights_heating
+      row: 3
+      column: 2
+      column_span: 2
+      text: "Heizung"
+      icon: $mdi_page_next
+      page_id: "light_page"
+      click_page: "heating_page"
+      image: nav_heating
+
+
+  page_button_lights_solar: !include
+    file: ../../draft/ui/page/page_button_localimage.yaml
+    vars:
+      uid: page_button_lights_solar
+      row: 3
+      column: 4
+      column_span: 2
+      text: "Strom"
+      icon: $mdi_page_next
+      page_id: "light_page"
+      click_page: "solar_page"
+      image: nav_solar
+
+
+  page_button_lights_cal: !include
+    file: ../../draft/ui/page/page_button_localimage.yaml
+    vars:
+      uid: page_button_lights_cal
+      row: 3
+      column: 6
+      column_span: 2
+      text: "Kalender"
+      icon: $mdi_page_next
+      page_id: "light_page"
+      click_page: "cal_page"
+      image: nav_cal
+
+
+
+
+
+# ── Seitendefinition ──
+lvgl:
+  pages:
+    - id: light_page
+      layout: 4x8
+      styles: page_style
+      bg_color: 0x18213A      # Fallback
+      bg_opa: COVER
+      bg_grad: page_bg_grad
+      <<: !include ../../esphome-modular-lvgl-buttons/common/swipe_navigation.yaml

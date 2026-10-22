@@ -1,0 +1,53 @@
+Bruttosozialprodukt
+BSP:o=5,d=8,b=170,b=170:d6,p,c6,p,a,a,c6,c6,d6,d6,c6,a,4p,d6,p,e6,e6,d6,p,b,b,d6,p,e6,p,d6,b,p,d6,d6,d6,d6,p,c6,p,a,a,c6,c6,d6,d6,c6,a,2p,g,g,a,a#,b,d,e,4g.
+
+Chariots of Fire:o=5,d=16,b=85,b=85:8c#,f#.,g#.,a#.,4g#,4f,8p,8c#,f#.,g#.,a#.,2g#,8p,8c#,f#.,g#.,a#.,4g#,4f,8p,8f,f#.,f.,c#.,2c#
+
+Colonel Bogey:o=5,d=8,b=140,b=140:g,e,4p,p,e,f,g,e6,p,e6,p,2c6,g,e,4p,p,e,f,e,g,p,g,p,2f,f,d,4p,p,d,e,f,g,e,4p,p,e,f#,e,d,g,p,e,f#,d,p,a,g.,16f#,g,a,g,f,e,d
+
+Entertainer:o=5,d=8,b=140,b=140:d,d#,e,4c6,e,4c6,e,2c6.,c6,d6,d#6,e6,c6,d6,4e6,b,4d6,2c6,4p,d,d#,e,4c6,e,4c6,e,2c6.,p,a,g,f#,a,c6,4e6,d6,c6,a,2d6
+
+Flintstones:o=5,d=8,b=200,b=200:g#,4c#,p,4c#6,a#,4g#,4c#,p,4g#,f#,f,f,f#,g#,4c#,4d#,2f,2p,4g#,4c#,p,4c#6,a#,4g#,4c#,p,4g#,f#,f,f,f#,g#,4c#,4d#,2c#
+
+Fraggle Rock:o=5,d=8,b=112,b=112:c6,16c6,c6,16c6,a,2p,b,b,a,g,16e6,d6,c6,16a,g,c6,16c6,c6,16d6,a,2p,b,16b,a,16b,c6
+
+Fruit and Nut:o=5,d=16,b=70,b=70:d,c#,d,c#,d,p,c#,p,e,p,32d,32f#,32a,32d6,8f#6.,p,g6,f#6,g6,f#6,e6,d6,a,f#,8d.,32f#,32d6,8c#6.,p,b,b4,b4,32b4,32c#,b4,p,a4,p,b,b4,b4,32b4,32c#,b4,p,a4,p,d6,d,d,d,d,c#,e,d,d,c#,b4,a4,8g6,32e6,32c#6,32g,32e,d,c#,d,c#,d,p,c#,p,e,p,32d,32f#,32a,32d6,8f#6.,32p,g6,f#6,g6,f#6,e6,d6,a,f#,8d.,32f#,32d6,8c#6.,p,b,b4,b4,32b4,32c#,b4,p,a4,p,b,b4,b4,32b4,32c#,b4,p,a4,p,b,b4,8b4,8c#,32p,8c#,8d.
+
+Ghost Busters:o=5,d=8,b=145,b=145:16c6,32p,16c6,e6,c6,d6,a#,2p,32c6,32p,32c6,32p,c6,a#,c6
+
+Halloween:o=5,d=8,b=180,b=180:d6,g,g,d6,g,g,d6,g,d#6,g,d6,g,g,d6,g,g,d6,g,d#6,g,c#6,f#,f#,c#6,f#,f#,c#6,f#,d6,f#,c#6,f#,f#,c#6,f#,f#,c#6,f#,d6,f#
+
+Itchy and Scratchy:o=5,d=8,b=160,b=160:c6,a,4p,c6,a6,4p,c6,a,c6,a,c6,a6,4p,p,c6,d6,e6,p,e6,f6,g6,4p,d6,c6,4d6,f6,4a#6,4a6,2c7
+
+
+Munsters:o=5,d=8,b=160,b=160:d,f,d,g#,a,4d6,a#,a,2g,f,g,4a,a4,g#4,a4,b4,4c#,2d,4p,4c,4c6,4c6,2c6,a#,a,a#,g,a,4f,4p,4g,4g,2g,f,e,f,d,e,2c#,4p,4d,f,d,g#,a,4d6,a#,a,2g,f,g,4a,a4,g#4,a4,b4,4c#,2d
+
+Muppet:o=5,d=8,b=250,b=250:c6,4c6,4a,4b,a,4b,4g,4p,4c6,4c6,4a,b,a,p,4g.,4p,4e,4e,4g,4f,e,4f,c6,c,d,4e,e,e,p,e,4g,2p,4c6,4c6,4a,4b,a,4b,4g,4p,4c6,4c6,4a,b,4a,4g.,4p,4e,4e,4g,4f,e,4f,c6,c,d,4e,e,4d,d,4c
+
+Pinky and the Brain:o=6,d=16,b=200,b=200:b5.,p,8e.,p,d#.,p,8e.,p,g.,p,4d#.,4p,b5.,p,8e.,p,d#.,p,8e.,p,g.,p,4d#.,4p,4e,8p,8e.,p,g.,p,8a#.,p,4a#,8p,a#.,p,8b.,p,a.,p,4g,8p,4f#,4p,e.,p,8a.,p,g#.,p,8a.,p,b.,p,4g#,4p,e.,p,8a.,p,g#.,p,8a.,p,b.,p,4g#,4p,c.,p,8b5.,p,8b5.,8p,b5.,p
+
+Popcorn:o=5,d=16,b=160,b=160:a,p,g,p,a,p,e,p,c,p,e,p,8a4,8p,a,p,g,p,a,p,e,p,c,p,e,p,8a4,8p,a,p,b,p,c6,p,b,p,c6,p,a,p,b,p,a,p,b,p,g,p,a,p,g,p,a,p,f,8a,8p,a,p,g,p,a,p,e,p,c,p,e,p,8a4,8p,a,p,g,p,a,p,e,p,c,p,e,p,8a4,8p,a,p,b,p,c6,p,b,p,c6,p,a,p,b,p,a,p,b,p,g,p,a,p,g,p,a,p,b,4c6
+
+Popeye:o=6,d=8,b=160,b=160:a5,c,c,c,4a#5,a5,4c,2p,c,d,a#5,d,4f,d,2c,p,c,d,a#5,d,f,e,d,c,d,c,a5,f5,a5,c,d,c,4a#5,g5,2f5
+
+Simpsons:o=5,d=8,b=160,b=160:c6.,4e6,4f#6,a6,4g6.,4e6,4c6,a,f#,f#,f#,2g,p,p,f#,f#,f#,g,4a#.,c6,c6,c6,4c6
+
+Smurfs:o=5,d=4,b=200,b=200:2c6,f6.,8c6,d6,a#,2g,c6.,8a,f,a,2g,p,16g,16a,16a#,16b,2c6,f6.,8c6,d6,a#,2g,c6.,8a,a#,e,2f,p,16g,16a,16a#,16b,2c6,f6.,8c6,d6,a#,2g,c6.,8a,f,a,2g,p,16g,16a,16a#,16b,2c6,f6.,8c6,d6,a#,2g,c6.,8a,a#,e,2f.,1p
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
