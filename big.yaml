@@ -21,6 +21,9 @@ substitutions:
   display_nighttime_brightness: "50%"
   display_night_hour: "0"      # Hour for night mode (0-23)
   display_night_minute: "0"    # Minute for night mode (0-59)
+  # Morgens aus dem Night-Modus in den Evening-Modus (Display bleibt an, 50 %)
+  display_wake_weekday_hour: "5"   # Mo–Fr
+  display_wake_weekend_hour: "6"   # Sa + So
   display_backlight_timeout_always_enabled: "false"  # Set true to dim/off in all modes, not just Night
   display_backlight_timeout_initial: "5"  # Initial backlight timeout in minutes (-1 to disable)
   # defaults for popup pages
@@ -82,6 +85,26 @@ esp32:
   framework:
     sdkconfig_options:
       CONFIG_ESP_HOSTED_MEMPOOL_PREFER_SPIRAM: y
+
+
+# Aufwachzeit: Night → Evening, damit das Display morgens nicht dunkel ist.
+# Nur wenn gerade Night aktiv ist – nach Sonnenaufgang (Day) passiert nichts.
+# Ergänzt die Zeitsteuerung aus backlight_time.yaml (Bibliothek bleibt unverändert).
+time:
+  - id: !extend system_time
+    on_time:
+      - seconds: 0
+        minutes: 0
+        hours: ${display_wake_weekday_hour}
+        days_of_week: MON-FRI
+        then:
+          - script.execute: wake_display_morning
+      - seconds: 0
+        minutes: 0
+        hours: ${display_wake_weekend_hour}
+        days_of_week: SAT,SUN
+        then:
+          - script.execute: wake_display_morning
 
 
 api:
@@ -193,6 +216,18 @@ mqtt:
 
 # Time update script - This is run once per second. Use it to update any time related labels.
 script:
+  - id: wake_display_morning
+    then:
+      - if:
+          condition:
+            lambda: 'return id(brightness_mode).current_option() == "Night";'
+          then:
+            - logger.log:
+                level: INFO
+                format: "Morning wake-up: Night -> Evening"
+            - select.set:
+                id: brightness_mode
+                option: "Evening"
   # --------------------------------------------------------------------------
   # This script is called once per minute.
   # Any packages in this library will !extend time_update to update their own labels.
